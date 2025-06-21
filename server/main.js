@@ -1,0 +1,243 @@
+import express from 'express';
+import http from 'http';
+import path from 'path';
+import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import session   from 'express-session';
+import { createClient } from 'redis';
+import { RedisStore }   from 'connect-redis';
+import { WebSocketServer } from 'ws';
+import { fileURLToPath } from 'url';
+
+import dbHelper from './modules/dbHelper.js';
+import captchaHelper from './modules/captchaHelper.js';
+import emailModule from './modules/email.js';
+import userModule from './modules/user.js';
+import profileModule from './modules/profile.js';
+import { Status } from './constants.js';
+
+dotenv.config();
+const port = process.env.PORT || 3000;
+const secretKey = process.env.SESSION_KEY;
+const dbConnectionString = process.env.DB_CONN;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const __clientPath = path.join(__dirname, '../client');
+
+dbHelper.connect(dbConnectionString);
+
+const app = express();
+app.use(express.json());
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL
+});
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+await redisClient.connect();
+
+const basicLimiter = rateLimit({
+    windowMs: 1000, 
+    max: 10, 
+    message: {
+        error: 'Too many requests, please try again after a minute.'
+    }
+});
+
+// const verificationLimiter = rateLimit({
+//     windowMs: 60 * 60 * 1000, // 1 hour
+//     max: 3, // limit each IP to 3 request per windowMs
+//     message: {
+//         error: 'Too many requests, please try again after a minute.'
+//     }
+// });
+
+const processGetAPI = async (req, res) => {
+    const { module, action, id } = req.params;
+    const data = { ...req.body, ...req.query };
+    switch (module) {
+        case 'user':
+            switch (action) {
+                // case 'verify-verification-code': {
+                //     let responseData = await userModule.verifyVerificationCode(dbHelper, data);
+                //     if (responseData.status === Status.OK) {
+                //         return res.redirect('../../email-verification-success.html');
+                //     }
+                //     return res.status(responseData.status).json(responseData);
+                // }
+                case 'profile': {
+                    let responseData = await userModule.getUser(dbHelper, req.session);
+                    let profileResponseData = await profileModule.getProfile(dbHelper, req.session);
+                    profileResponseData.data = { ...responseData.data, ...profileResponseData.data };
+                    return res.status(profileResponseData.status).json(profileResponseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
+        default:
+            return res.status(404).json({ error: 'Unknown module' });
+    }
+};
+
+const processPostAPI = async (req, res) => {
+    const { module, action, id } = req.params;
+    const data = { ...req.body, ...req.query };
+    switch (module) {
+        case 'user':
+            switch (action) {
+                case 'register': {
+                    // let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
+                    // let verificationCode = Math.floor(100000 + Math.random() * 900000);
+                    // if (responseData.status === Status.OK) {
+                    //     responseData = await userModule.register(dbHelper, req.session, data, verificationCode);
+                    // }
+                    // if (responseData.status === Status.OK) {
+                    //     await profileModule.create(dbHelper, responseData.userId);
+                    //     await emailModule.sendVerificationCode(data.email, verificationCode);
+                    // }
+                    // captchaHelper.resetCaptcha(req.session);
+                    // return res.status(responseData.status).json(responseData);
+                    let responseData = await userModule.register(dbHelper, data);
+                    if (responseData.status === Status.OK) {
+                        await profileModule.create(dbHelper, responseData.userId);
+                    }
+                    return res.status(responseData.status).json(responseData);
+                }
+                // case 'resend-verification-code': {
+                //     let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
+                //     if (responseData.status === Status.OK) {
+                //         responseData = await userModule.getVerificationCode(dbHelper, data.email);
+                //     }
+                //     if (responseData.status === Status.OK) {
+                //         responseData = await emailModule.sendVerificationCode(data.email, responseData.verificationCode);
+                //     }
+                //     captchaHelper.resetCaptcha(req.session);
+                //     return res.status(responseData.status).json(responseData);
+                // }
+                case 'login': {
+                    let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
+                    // if (responseData.status === Status.OK) {
+                    //     responseData = await userModule.login(dbHelper, req.session, data);
+                    // }
+                    // captchaHelper.resetCaptcha(req.session);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'google-login': {
+                    let responseData = await userModule.googleLogin(dbHelper, req.session, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'facebook-login': {
+                    let responseData = await userModule.facebookLogin(dbHelper, req.session, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'logout': {
+                    let responseData = await userModule.logout(req.session);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'profile': {
+                    let profileResponseData = await profileModule.updateProfile(dbHelper, req.session, data);
+                    return res.status(profileResponseData.status).json(profileResponseData);
+                }
+                case 'profile-picture': {
+                    let profileResponseData = await profileModule.updateProfilePic(dbHelper, req.session, data);
+                    return res.status(profileResponseData.status).json(profileResponseData);
+                }
+                case 'change-password': {
+                    let responseData = await userModule.changePassword(dbHelper, req.session, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                // case 'reset-password': {
+                //     let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
+                //     let newGeneratedPassword = userModule.generateValidPassword();
+                //     if (responseData.status === Status.OK) {
+                //         responseData = await userModule.resetPassword(dbHelper, data.email, newGeneratedPassword);
+                //     }
+                //     if (responseData.status === Status.OK) {
+                //         await emailModule.sendResetPassword(data.email, newGeneratedPassword);
+                //     }
+                //     captchaHelper.resetCaptcha(req.session);
+                //     return res.status(responseData.status).json(responseData);
+                // }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
+        case 'reservation':
+            switch (action) {
+                case 'create': {
+                    let responseData = await reservationModule.create(dbHelper, req.session, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
+        default:
+            return res.status(404).json({ error: 'Unknown module' });
+    }
+};
+
+const sessionParser = session({
+  store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
+  secret: process.env.SESSION_KEY,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 60 * 1000 * 24, 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true
+  }
+});
+
+app.use(sessionParser);
+
+app.use(express.static(__clientPath));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__clientPath, 'index.html'));
+});
+
+// app.get('/api/auth/captcha', basicLimiter, async (req, res) => {
+//     res.json(await captchaHelper.handleCaptcha(req.session));
+// });
+
+// app.get('/api/user/verify-verification-code', verificationLimiter, async (req, res) => {
+//     req.params.module = 'user';
+//     req.params.action = 'verify-verification-code';
+//     await processGetAPI(req, res);
+// });
+
+app.get('/api/:module/:action', basicLimiter, processGetAPI);
+
+app.post('/api/:module/:action', basicLimiter, processPostAPI);
+
+app.get('/api/:module/:action/:id', basicLimiter, processGetAPI);
+
+app.post('/api/:module/:action/:id', basicLimiter, processPostAPI);
+
+app.use((req, res) => {
+    res.redirect('../error-404.html');
+});
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (req, socket, head) => {
+  sessionParser(req, {}, () => {
+    if (!req.session.userId) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
+  });
+});
+
+wss.on('connection', (ws, req) => {
+  const userId = req.session.userId;
+  console.log(`New client connected: ${userId}`);
+  ws.on('message', msg => ws.send(`Hello ${userId}, you sent -> ${msg}`));
+  ws.on('close', () => console.log(`Client ${userId} has disconnected`));
+});
+
+server.listen(port, () => {
+    console.log(`API listening at http://localhost:${port}`);
+});

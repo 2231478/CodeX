@@ -1,0 +1,39 @@
+{
+  "name": "XCode",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "serve": "node server/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
+  },
+  "author": "JMAcreation",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-redis": "^8.1.0",
+    "diskusage": "^1.2.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "express-session": "^1.18.0",
+    "google-auth-library": "^9.15.1",
+    "mongoose": "^8.4.3",
+    "moongose": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.14",
+    "npm": "^10.8.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "randomatic": "^3.1.1",
+    "redis": "^5.1.0",
+    "sharp": "^0.33.4",
+    "svg-captcha": "^1.4.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.23.0"
+  }
+}
