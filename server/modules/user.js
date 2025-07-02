@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Status } from '../constants.js';
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
+import jwtHelper from './jwtHelper.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -88,113 +89,114 @@ const userModule = {
      * @param {object} data the data object containing the email and password fields
      * @returns {object} the response data object containing the status and error fields
      */
-    login: async (dbHelper, session, data) => {
+    
+    login: async (dbHelper, data) => {
         const responseData = {
-            status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on logging in user'
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: 'Error on logging in user'
         };
         try {
-            const { email, password } = data;
-            if (!isPresent(email) || !isPresent(password)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Missing required fields';
-                return responseData;
-            }
-            if (!isValidEmail(email)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Invalid email address';
-                return responseData;
-            }
-            if (!isValidPassword(password)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Invalid password';
-                return responseData;
-            }
+        const { email, password } = data;
+        if (!isPresent(email) || !isPresent(password)) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Missing required fields';
+            return responseData;
+        }
+        if (!isValidEmail(email)) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Invalid email address';
+            return responseData;
+        }
+        if (!isValidPassword(password)) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Invalid password';
+            return responseData;
+        }
 
-            const userObject = await dbHelper.findOne('user', { email });
+        const userObject = await dbHelper.findOne('user', { email });
+        if (!userObject) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Email does not exist';
+            return responseData;
+        }
+        const match = await bcrypt.compare(password, userObject.password);
+        if (!match) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Invalid Email and Password Combination';
+            return responseData;
+        }
+        
+        const accessToken = jwtHelper.generateAccessToken(userObject);
 
-            if (userObject) {
-                if(await isMatchedPassword(password, userObject.password) == false){
-                    responseData.status = Status.BAD_REQUEST;
-                    responseData.error = 'Invalid Email and Password Combination';
-                    return responseData;
-                }
-            } else {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Email does not exists';
-                return responseData;
-            }
+        dbHelper.updateOne('user', { email }, { lastLoggedIn: new Date().valueOf() });
 
-            session.userEmail = email;
-            session.userId = userObject._id.toString();
-            session.cookie.maxAge = 30 * 60 * 1000 * 24;
-            
-            responseData.status = Status.OK;
-            responseData.error = null;
-            responseData.message = 'User logged in successfully';
+        responseData.status = Status.OK;
+        responseData.error = null;
+        responseData.message = 'User logged in successfully';
+        responseData.accessToken = accessToken;
 
-            dbHelper.updateOne('user', { email }, { lastLoggedIn: new Date().valueOf() });
         } catch (error) {
-            console.error('Error logging in user:', error);
+        console.error('Error logging in user:', error);
+        responseData.error = error.message;
         }
         return responseData;
     },
 
-   /**
-   * Logs in or registers a user via Google OAuth.
-   * @param {Object} dbHelper - The database helper for database operations.
-   * @param {Object} session - The session object for the current user.
-   * @param {Object} data - The data object containing the Google ID token.
-   * @returns {Object} Response data with status, error, message, and userId on success.
-   */
-  googleLogin: async (dbHelper, session, data) => {
+    /**
+     * Logs in or registers a user via Google OAuth.
+     * @param {Object} dbHelper - The database helper for database operations.
+     * @param {Object} session - The session object for the current user.
+     * @param {Object} data - The data object containing the Google ID token.
+     * @returns {Object} Response data with status, error, message, and userId on success.
+     */
+    googleLogin: async (dbHelper, data) => {
     const responseData = {
-      status: Status.INTERNAL_SERVER_ERROR,
-      error: 'Error on logging in with Google'
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: 'Error on logging in with Google'
     };
 
     try {
-      if (!data.token) {
+        if (!data.token) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Missing Google token';
         return responseData;
-      }
+        }
 
-      const ticket = await client.verifyIdToken({
+        const ticket = await client.verifyIdToken({
         idToken: data.token,
         audience: process.env.GOOGLE_CLIENT_ID
-      });
-      const payload = ticket.getPayload();
-      const googleId = payload.sub;
-      const email = payload.email;
-      const name = payload.name;
-
-      let user = await dbHelper.findOne('user', { googleId });
-      
-      if (!user) {
-        user = await dbHelper.create('user', {
-          email,
-          name,
-          googleId,
-          createdAt: new Date().valueOf()
         });
-      }
-      
-      session.userEmail = email;
-      session.userId = user._id.toString();
-      session.cookie.maxAge = 30 * 60 * 1000 * 24;
 
-      responseData.status = Status.OK;
-      responseData.error = null;
-      responseData.message = 'User logged in with Google successfully';
-      responseData.userId = user._id.toString();
+        const payload = ticket.getPayload();
+        const googleId = payload.sub;
+        const email = payload.email;
+        const name = payload.name;
+
+        let user = await dbHelper.findOne('user', { googleId });
+        if (!user) {
+        user = await dbHelper.create('user', {
+            email,
+            name,
+            googleId,
+            createdAt: new Date().valueOf()
+        });
+        }
+        
+        const accessToken = jwtHelper.generateAccessToken(user);
+
+        responseData.status = Status.OK;
+        responseData.error = null;
+        responseData.message = 'User logged in with Google successfully';
+        responseData.userId = user._id.toString();
+        responseData.accessToken = accessToken;
+
     } catch (error) {
-      console.error('Error logging in with Google:', error);
-      responseData.error = error.message;
+        console.error('Error logging in with Google:', error);
+        responseData.error = error.message;
     }
 
     return responseData;
-  },
+    },
 
   /**
   * Logs in or registers a user via Facebook OAuth.
@@ -203,7 +205,7 @@ const userModule = {
   * @param {Object} data - The data object containing the Facebook token.
   * @returns {Object} Response data with status, error, message, and userId on success.
   */
-  facebookLogin: async (dbHelper, session, data) => {
+  facebookLogin: async (dbHelper, data) => {
     const responseData = {
         status: Status.INTERNAL_SERVER_ERROR,
         error: 'Error on logging in with Facebook'
@@ -238,14 +240,13 @@ const userModule = {
             });
         }
 
-        session.userEmail = email;
-        session.userId = user._id.toString();
-        session.cookie.maxAge = 30 * 60 * 1000 * 24;
+        const accessToken = jwtHelper.generateAccessToken(user);
 
         responseData.status = Status.OK;
         responseData.error = null;
         responseData.message = 'User logged in with Facebook successfully';
         responseData.userId = user._id.toString();
+        responseData.accessToken = accessToken;
 
     } catch (error) {
         console.error('Error logging in with Facebook:', error);
@@ -254,7 +255,6 @@ const userModule = {
 
     return responseData;
 },
-
 
     /**
      * Logs out the user from the system

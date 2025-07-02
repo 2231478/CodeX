@@ -3,15 +3,14 @@ import http from 'http';
 import path from 'path';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import session   from 'express-session';
 import { createClient } from 'redis';
-import { RedisStore }   from 'connect-redis';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 
 import dbHelper from './modules/dbHelper.js';
 import captchaHelper from './modules/captchaHelper.js';
 import emailModule from './modules/email.js';
+import jwtHelper from './modules/jwtHelper.js';
 import userModule from './modules/user.js';
 import profileModule from './modules/profile.js';
 import { Status } from './constants.js';
@@ -66,8 +65,8 @@ const processGetAPI = async (req, res) => {
                 //     return res.status(responseData.status).json(responseData);
                 // }
                 case 'profile': {
-                    let responseData = await userModule.getUser(dbHelper, req.session);
-                    let profileResponseData = await profileModule.getProfile(dbHelper, req.session);
+                    let responseData = await userModule.getUser(dbHelper, req.user);
+                    let profileResponseData = await profileModule.getProfile(dbHelper, req.user);
                     profileResponseData.data = { ...responseData.data, ...profileResponseData.data };
                     return res.status(profileResponseData.status).json(profileResponseData);
                 }
@@ -115,19 +114,21 @@ const processPostAPI = async (req, res) => {
                 //     return res.status(responseData.status).json(responseData);
                 // }
                 case 'login': {
-                    let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
-                    // if (responseData.status === Status.OK) {
-                    //     responseData = await userModule.login(dbHelper, req.session, data);
-                    // }
-                    // captchaHelper.resetCaptcha(req.session);
+                    // let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
+                    // // if (responseData.status === Status.OK) {
+                    // //     responseData = await userModule.login(dbHelper, req.session, data);
+                    // // }
+                    // // captchaHelper.resetCaptcha(req.session);
+                    // return res.status(responseData.status).json(responseData);
+                    let responseData = await userModule.login(dbHelper, data);
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'google-login': {
-                    let responseData = await userModule.googleLogin(dbHelper, req.session, data);
+                    let responseData = await userModule.googleLogin(dbHelper, data);  
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'facebook-login': {
-                    let responseData = await userModule.facebookLogin(dbHelper, req.session, data);
+                    let responseData = await userModule.facebookLogin(dbHelper, data);
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'logout': {
@@ -175,19 +176,43 @@ const processPostAPI = async (req, res) => {
     }
 };
 
-const sessionParser = session({
-  store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
-  secret: process.env.SESSION_KEY,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 60 * 1000 * 24, 
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const user = jwtHelper.verifyAccessToken(token);
+    if (!user) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user; 
+    next();
+  } else {
+    res.status(401).json({ error: 'Authorization header missing or malformed' });
   }
-});
+}
 
-app.use(sessionParser);
+function isProtected(module, action) {
+  const protectedEndpoints = {
+    user: ['profile', 'logout', 'change-password'],
+    profile: ['update', 'uploadPicture'],
+    reservation: ['create'],
+  };
+  return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
+}
+
+// const sessionParser = session({
+//   store: new RedisStore({ client: redisClient, prefix: 'sess:' }),
+//   secret: process.env.SESSION_KEY,
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     maxAge: 30 * 60 * 1000 * 24, 
+//     secure: process.env.NODE_ENV === 'production',
+//     httpOnly: true
+//   }
+// });
+
+// app.use(sessionParser);
 
 app.use(express.static(__clientPath));
 
@@ -205,13 +230,38 @@ app.get('/', (req, res) => {
 //     await processGetAPI(req, res);
 // });
 
-app.get('/api/:module/:action', basicLimiter, processGetAPI);
+app.get('/api/:module/:action', basicLimiter, (req, res, next) => {
+  if (isProtected(req.params.module, req.params.action)) {
+    authenticateJWT(req, res, () => processGetAPI(req, res));
+  } else {
+    processGetAPI(req, res);
+  }
+});
 
-app.post('/api/:module/:action', basicLimiter, processPostAPI);
+app.post('/api/:module/:action', basicLimiter, (req, res, next) => {
+  if (isProtected(req.params.module, req.params.action)) {
+    authenticateJWT(req, res, () => processPostAPI(req, res));
+  } else {
+    processPostAPI(req, res);
+  }
+});
 
-app.get('/api/:module/:action/:id', basicLimiter, processGetAPI);
+app.get('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
+  if (isProtected(req.params.module, req.params.action)) {
+    authenticateJWT(req, res, () => processGetAPI(req, res));
+  } else {
+    processGetAPI(req, res);
+  }
+});
 
-app.post('/api/:module/:action/:id', basicLimiter, processPostAPI);
+app.post('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
+  if (isProtected(req.params.module, req.params.action)) {
+    authenticateJWT(req, res, () => processPostAPI(req, res));
+  } else {
+    processPostAPI(req, res);
+  }
+});
+
 
 app.use((req, res) => {
     res.redirect('../error-404.html');
