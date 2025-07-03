@@ -1,0 +1,56 @@
+.sidePanel {
+  flex: 1; /* Takes up one part of the flex container */
+  background-color: #558B55; /* Green background */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+  border-radius: 15px 0 0 15px; /* Rounded left corners */
+}
+
+.logoContainer {
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 100px; /* Adjust size as needed */
+  height: auto;
+}
+
+.logoText {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.textContent h2 {
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.textContent p {
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+
+.promptText {
+  margin-top: 40px; /* Space before "Already have an account?" */
+  margin-bottom: 15px;
+}
+
+.toggleButton {
+  background-color: #386A38; /* Darker green for button */
+  color: white;
+  padding: 12px 30px;
+  font-size: 1.1em;
+  transition: background-color 0.3s ease;
+  min-width: 150px;
+}
+
+.toggleButton:hover {
+  background-color: #2a522a;
+}

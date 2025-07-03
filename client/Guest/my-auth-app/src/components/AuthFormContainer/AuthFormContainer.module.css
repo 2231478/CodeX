@@ -1,0 +1,83 @@
+.formContainer {
+  flex: 1.5; /* Takes up more space than the side panel */
+  background: rgba(255, 255, 255, 0.85); /* Slightly less transparent for the form itself */
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0 15px 15px 0; /* Rounded right corners */
+}
+
+.formContainer h2 {
+  font-size: 2em;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.formContainer p {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.formInput {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1em;
+  box-sizing: border-box; /* Include padding in width */
+}
+
+.formButton {
+  background-color: #386A38; /* Green for main buttons */
+  color: white;
+  padding: 12px 20px;
+  font-size: 1.1em;
+  width: 100%;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.formButton:hover {
+  background-color: #2a522a;
+}
+
+.socialLogin {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.socialButton {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em; /* For the icons */
+  width: 50px;
+  height: 50px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.socialButton:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.orSeparator {
+  margin: 20px 0;
+  color: #888;
+  font-size: 0.9em;
+}
+
+.form-group {
+  width: 100%;
+  max-width: 350px; /* Limit form width */
+}
