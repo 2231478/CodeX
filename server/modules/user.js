@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { Status } from '../constants.js';
+import { Status, UserRole } from '../constants.js';
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import jwtHelper from './jwtHelper.js';
@@ -65,6 +65,7 @@ const userModule = {
                     name, 
                     password: await hashPassword(password), 
                     mobileNumber: convertToPlus639Format(mobileNumber),
+                    role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
                     lastLoggedIn: null
                 });                
@@ -73,6 +74,7 @@ const userModule = {
                 responseData.error = null;
                 responseData.message = 'User registered successfully';
                 responseData.userId = userCreated._id.toString();
+                responseData.role = userCreated.role;
             } catch (error) {
                 console.error('Error registering user:', error);
             }
@@ -134,6 +136,8 @@ const userModule = {
         responseData.error = null;
         responseData.message = 'User logged in successfully';
         responseData.accessToken = accessToken;
+        responseData.userId = userObject._id.toString();
+        responseData.role = userObject.role;
 
         } catch (error) {
         console.error('Error logging in user:', error);
@@ -178,6 +182,7 @@ const userModule = {
             email,
             name,
             googleId,
+            role: UserRole.GUEST,
             createdAt: new Date().valueOf()
         });
         }
@@ -188,6 +193,7 @@ const userModule = {
         responseData.error = null;
         responseData.message = 'User logged in with Google successfully';
         responseData.userId = user._id.toString();
+        responseData.role = user.role;
         responseData.accessToken = accessToken;
 
     } catch (error) {
@@ -236,6 +242,7 @@ const userModule = {
                 facebookId,
                 email,
                 name,
+                role: UserRole.GUEST,
                 createdAt: new Date().valueOf()
             });
         }
@@ -246,6 +253,7 @@ const userModule = {
         responseData.error = null;
         responseData.message = 'User logged in with Facebook successfully';
         responseData.userId = user._id.toString();
+        responseData.role = user.role;
         responseData.accessToken = accessToken;
 
     } catch (error) {

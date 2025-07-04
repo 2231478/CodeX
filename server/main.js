@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { createClient } from 'redis';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
 
 import dbHelper from './modules/dbHelper.js';
 import captchaHelper from './modules/captchaHelper.js';
@@ -13,12 +14,14 @@ import emailModule from './modules/email.js';
 import jwtHelper from './modules/jwtHelper.js';
 import userModule from './modules/user.js';
 import profileModule from './modules/profile.js';
+import facilityModule from './modules/facility.js';
 import { Status } from './constants.js';
 
 dotenv.config();
 const port = process.env.PORT || 3000;
 const secretKey = process.env.SESSION_KEY;
 const dbConnectionString = process.env.DB_CONN;
+const upload = multer({ storage: multer.memoryStorage() });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,6 +76,19 @@ const processGetAPI = async (req, res) => {
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
+          case 'facility':
+            switch (action) {
+                case 'get-all-facilities': {
+                    let responseData = await facilityModule.getAllFacilities(dbHelper);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'get-facility-by-id': {
+                    let responseData = await facilityModule.getFacilityById(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
         default:
             return res.status(404).json({ error: 'Unknown module' });
     }
@@ -98,7 +114,7 @@ const processPostAPI = async (req, res) => {
                     // return res.status(responseData.status).json(responseData);
                     let responseData = await userModule.register(dbHelper, data);
                     if (responseData.status === Status.OK) {
-                        await profileModule.create(dbHelper, responseData.userId);
+                        await profileModule.createProfilec(dbHelper, responseData.userId);
                     }
                     return res.status(responseData.status).json(responseData);
                 }
@@ -164,13 +180,22 @@ const processPostAPI = async (req, res) => {
             }
         case 'reservation':
             switch (action) {
-                case 'create': {
+                case 'create-reservation': {
                     let responseData = await reservationModule.create(dbHelper, req.session, data);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
+            }c
+        case 'facility':
+          switch (action) {
+            case 'create-facility': {
+              let responseData = await facilityModule.addFacility(dbHelper, data, req.file, req.user);
+              return res.status(responseData.status).json(responseData);
             }
+            default:
+              return res.status(404).json({ error: 'Unknown action' });
+          }
         default:
             return res.status(404).json({ error: 'Unknown module' });
     }
@@ -196,6 +221,7 @@ function isProtected(module, action) {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
     reservation: ['create'],
+    facility: ['create-facility']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }
@@ -238,13 +264,14 @@ app.get('/api/:module/:action', basicLimiter, (req, res, next) => {
   }
 });
 
-app.post('/api/:module/:action', basicLimiter, (req, res, next) => {
-  if (isProtected(req.params.module, req.params.action)) {
-    authenticateJWT(req, res, () => processPostAPI(req, res));
-  } else {
-    processPostAPI(req, res);
+app.post('/api/:module/:action', basicLimiter, upload.single('image'), (req, res, next) => {
+    if (isProtected(req.params.module, req.params.action)) {
+      authenticateJWT(req, res, () => processPostAPI(req, res));
+    } else {
+      processPostAPI(req, res);
+    }
   }
-});
+);
 
 app.get('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
   if (isProtected(req.params.module, req.params.action)) {

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Category, FacilityType } from '../constants.js';
+import { UserRole, Category, FacilityType, FacilityStatus } from '../constants.js';
 
 const dbHelper = {
     connect: async (connectionString) => {
@@ -9,6 +9,7 @@ const dbHelper = {
                 name: { type: String, required: true },
                 password: { type: String, required: false },
                 mobileNumber: { type: String, required: false},
+                role: { type: String, enum: Object.values(UserRole), required: true, default: UserRole.GUEST },
                 createdAt: { type: Date, default: Date.now },
                 updatedAt: { type: Date, required: false},
                 lastLoggedIn: { type: Date, required: false}
@@ -31,7 +32,7 @@ const dbHelper = {
                 guestName: { type: String, required: true },
                 homeAddress: { type: String, required: true },
                 officeAddress: { type: String, required: false },
-                category: { type: String, enum: [Category.DEPED, Category.GOVERNMENT, Category.OTHERS], required: true },
+                category: { type: String, enum: Object.values(Category), required: true },
                 telephone: { type: String, required: true },
                 officeTelephone: { type: String, required: false },
                 numberOfGuests: {
@@ -48,7 +49,7 @@ const dbHelper = {
                 dateOfArrival: { type: Date, required: true }, // Check-in date
                 dateOfDeparture: { type: Date, required: true }, // Check-out date
                 facility: { type: mongoose.Schema.Types.ObjectId, ref: 'facility', required: true },
-                serviceType: { type: String, enum: [FacilityType.DEPED, FacilityType.GOVERNMENT, FacilityType.OTHERS], required: true }, //TODO: not sure what are the service types
+                serviceType: { type: String, enum: Object.values(FacilityType), required: true }, //TODO: not sure what are the service types
                 letterOfIntentFile: { type: String, required: true },
                 agreedToTerms: { type: Boolean, required: true },
                 //status: pending, approved, rejected, cancelled
@@ -60,10 +61,10 @@ const dbHelper = {
 
             const FacilitySchema = new mongoose.Schema({
                 name: { type: String, required: true },
-                facilityType: { type: String, enum: [FacilityType.DORMITORY, FacilityType.COTTAGE, FacilityType.CONFERENCE], required: true },
+                facilityType: { type: String, enum: Object.values(FacilityType), required: true },
                 capacity: { type: Number, required: true },
                 ratePerPerson: { type: Number, required: false },
-                basePrice: { type: Number, required: false },
+                status: { type: String, enum: Object.values(FacilityStatus), default: FacilityStatus.AVAILABLE, required: true },
                 image: { type: String, required: true}
                 });
             
@@ -100,9 +101,10 @@ const dbHelper = {
     create: async (collectionName, document) => {
         return await mongoose.model(collectionName).create(document);
     },
-    find: async (collectionName, query) => {
-        return await mongoose.model(collectionName).find(query);
+    find: async (collectionName, query = {}, projection = {}) => {
+        return await mongoose.model(collectionName).find(query, projection);
     },
+    
     findOne: async (collectionName, query) => {
         return await mongoose.model(collectionName).findOne(query);
     },
