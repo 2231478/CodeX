@@ -10,7 +10,6 @@ const userModule = {
     /**
      * Registers a new user.
      * @param {object} dbHelper - The database helper for database operations.
-     * @param {object} session - The session object for the current user.
      * @param {object} data - The data object containing the email, name, password, and mobileNumber fields.
      * @returns {object} Response data with status, error, message, and userId on success.
      */
@@ -91,7 +90,6 @@ const userModule = {
      * @param {object} data the data object containing the email and password fields
      * @returns {object} the response data object containing the status and error fields
      */
-    
     login: async (dbHelper, data) => {
         const responseData = {
         status: Status.INTERNAL_SERVER_ERROR,
@@ -435,7 +433,7 @@ function isValidEmail(email) {
 }
 
 function isValidName(name) {
-    const nameRegex = /^[A-Za-z]+$/;
+    const nameRegex = /^[A-Za-z]+([ '.-][A-Za-z]+)*$/;
     return nameRegex.test(name) && name.length > 0;
 }
 

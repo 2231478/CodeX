@@ -193,6 +193,14 @@ const processPostAPI = async (req, res) => {
               let responseData = await facilityModule.addFacility(dbHelper, data, req.file, req.user);
               return res.status(responseData.status).json(responseData);
             }
+            case 'update-facility': {
+              let responseData = await facilityModule.updateFacility(dbHelper, id, data, req.file, req.user);
+              return res.status(responseData.status).json(responseData);
+            }
+            case 'delete-facility': {
+              let responseData = await facilityModule.deleteFacility(dbHelper, id, req.user);
+              return res.status(responseData.status).json(responseData);
+            }
             default:
               return res.status(404).json({ error: 'Unknown action' });
           }
@@ -221,7 +229,7 @@ function isProtected(module, action) {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
     reservation: ['create'],
-    facility: ['create-facility']
+    facility: ['create-facility', 'update-facility', 'delete-facility']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }
@@ -281,7 +289,7 @@ app.get('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
   }
 });
 
-app.post('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
+app.post('/api/:module/:action/:id', basicLimiter, upload.single('image'), (req, res, next) => {
   if (isProtected(req.params.module, req.params.action)) {
     authenticateJWT(req, res, () => processPostAPI(req, res));
   } else {
