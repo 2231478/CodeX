@@ -36,9 +36,9 @@ const facilityModule = {
             return responseData;
           }
 
-          if (user.role !== UserRole.CRMSTEAM) {
+          if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
             responseData.status = Status.FORBIDDEN;
-            responseData.error = 'Only CRMS team can add a facility';
+            responseData.error = 'Only CRMS team and Superintendents can add a facility';
             return responseData;
           }
 
@@ -134,7 +134,7 @@ const facilityModule = {
       facilities: []
     };
     try {
-      const facilities = await dbHelper.find('facility', {}, { __v: 0 });
+      const facilities = await dbHelper.find('facility', {}, { __v: 0, createdAt: 0 });
 
       responseData.status = Status.OK;
       responseData.error = null;
@@ -157,8 +157,15 @@ const facilityModule = {
       error: 'Error fetching facility',
       facility: null
     };
+
+    if (!id) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Missing facility ID';
+        return responseData;
+      }
+
     try {
-      const facility = await dbHelper.findOne('facility', id);
+      const facility = await dbHelper.findOne('facility', { _id: id });
       if (!facility) {
         responseData.status = Status.NOT_FOUND;
         responseData.error = 'Facility not found';
@@ -167,6 +174,7 @@ const facilityModule = {
 
       const facilityObject = facility.toObject();
             delete facilityObject.__v;
+            delete facilityObject.createdAt;
 
       responseData.status = Status.OK;
       responseData.error = null;
@@ -205,9 +213,9 @@ const facilityModule = {
         return responseData;
       }
 
-      if (user.role !== UserRole.CRMSTEAM) {
+      if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
         responseData.status = Status.FORBIDDEN;
-        responseData.error = 'Only CRMS team can edit a facility';
+        responseData.error = 'Only CRMS team  and Superintendent can edit a facility';
         return responseData;
       }
 
@@ -313,9 +321,9 @@ const facilityModule = {
         return responseData;
       }
 
-      if (user.role !== UserRole.CRMSTEAM) {
+      if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
         responseData.status = Status.FORBIDDEN;
-        responseData.error = 'Only CRMS team can delete a facility';
+        responseData.error = 'Only CRMS team and Superintendent can delete a facility';
         return responseData;
       }
 
@@ -347,7 +355,7 @@ const facilityModule = {
       responseData.error = error.message;
     }
     return responseData;
-  },
+  }
 };
 
 export default facilityModule;

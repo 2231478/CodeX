@@ -1,0 +1,255 @@
+import { Status, UserRole } from '../constants.js';
+import dbHelper from './dbHelper.js';
+
+const specialServiceModule = {
+  /**
+   * Adds a new special service to the database.
+   * @param {Object} dbHelper - The database helper for DB operations 
+   * @param {Object} data - Data object containing name, price, and unit
+   * @param {Object} user - The user object representing the current user 
+   * @returns {Object} Response data with status, error, message, and specialServiceId on success.
+   */
+  addSpecialService: async (dbHelper, data, user) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error adding special service'
+    };
+
+    try {
+      const { name, price, unit } = data;
+
+      if (!isPresent(name) || !isPresent(price)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Missing required fields (name, price)';
+        return responseData;
+      }
+
+      if (!user || !user.userId) {
+        responseData.status = Status.UNAUTHORIZED;
+        responseData.error = 'User not logged in';
+        return responseData;
+      }
+
+      if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
+        responseData.status = Status.FORBIDDEN;
+        responseData.error = 'Only CRMS team and Superintendent can add a special service';
+        return responseData;
+      }
+
+      const existing = await dbHelper.findOne('specialservice', {
+            name,
+            price,
+            unit
+          });
+
+      if (existing) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Special service already exists';
+        return responseData;
+      }
+
+      const specialServiceData = {
+        name,
+        price,
+        unit
+      };
+
+      const specialService = await dbHelper.create('specialservice', specialServiceData);
+
+      responseData.status = Status.CREATED;
+      responseData.error = null;
+      responseData.message = 'Special service added successfully';
+      responseData.specialServiceId = specialService._id.toString();
+
+    } catch (error) {
+      console.error('Error adding special service:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  /**
+   * Fetches all special services.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @returns {Object} Response data with status, error, and specialServices on success.
+   */
+  getAllSpecialServices: async (dbHelper) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching special services',
+      specialServices: []
+    };
+
+    try {
+      const specialServices = await dbHelper.find('specialservice', {}, { __v: 0 , createdAt: 0 });
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.specialServices = specialServices;
+    } catch (error) {
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  /**
+   * Fetches a special service by its ID.
+   * @param {string} id - The ID of the special service.
+   * @returns {Object} Response data with status, error, and specialService on success.
+   */
+  getSpecialServiceById: async (id) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching special service',
+      specialService: null
+    };
+
+    if (!id) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Missing special service ID';
+          return responseData;
+        }
+
+    try {
+    const specialService = await dbHelper.findOne('specialservice', { _id: id });
+      if (!specialService) {
+        responseData.status = Status.NOT_FOUND;
+        responseData.error = 'Special service not found';
+        return responseData;
+      }
+
+      const specialServiceObject = specialService.toObject();
+            delete specialServiceObject.__v;
+            delete specialServiceObject.createdAt;
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.specialService = specialServiceObject;
+    } catch (error) {
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  /**
+   * Edits a special service by its ID.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} id - The ID of the special service to be edited.
+   * @param {Object} data - The data object containing the new values for name, price, and unit
+   * @param {Object} file - The file object containing the new image.
+   * @param {Object} user - The user object containing the user ID and role.
+   * @returns {Object} Response data with status, error, message, and specialServiceId on success.
+   */
+  updateSpecialService: async (dbHelper, id, data, user) => {
+      const responseData = {
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: 'Error editing special service'
+      };
+  
+      try {
+        if (!id) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Missing special service ID';
+          return responseData;
+        }
+  
+        if (!user || !user.userId) {
+          responseData.status = Status.UNAUTHORIZED;
+          responseData.error = 'User not logged in';
+          return responseData;
+        }
+  
+        if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
+          responseData.status = Status.FORBIDDEN;
+          responseData.error = 'Only CRMS team  and Superintendent can edit a special service';
+          return responseData;
+        }
+  
+        const specialService = await dbHelper.findOne('specialservice', { _id: id });
+        if (!specialService) {
+          responseData.status = Status.NOT_FOUND;
+          responseData.error = 'Special service not found';
+          return responseData;
+        }
+  
+        const updateData = {};
+        if (isPresent(data.name)) updateData.name = data.name;
+        if (isPresent(data.price)) {
+        if (!isValidPrice(data.price)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid price value';
+          return responseData;
+        }
+        updateData.price = data.price;
+        }
+        if (isPresent(data.unit)) updateData.unit = data.unit;
+  
+        await dbHelper.updateOne('specialservice', { _id: id }, { $set: updateData });
+      
+        responseData.status = Status.OK;
+        responseData.error = null;
+        responseData.message = 'Special service updated successfully';
+        responseData.specialServiceId = id;
+      } catch (error) {
+        console.error('Error editing special service:', error);
+        responseData.error = error.message;
+      }
+      return responseData;
+    },
+
+  deleteSpecialService: async (dbHelper, id, user) => {
+      const responseData = {
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: 'Error deleting special service',
+      };
+  
+      try {
+        if (!id) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Missing special service ID';
+          return responseData;
+        }
+  
+        if (!user || !user.userId) {
+          responseData.status = Status.UNAUTHORIZED;
+          responseData.error = 'User not logged in';
+          return responseData;
+        }
+  
+        if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
+          responseData.status = Status.FORBIDDEN;
+          responseData.error = 'Only CRMS team and Superintendent can delete a special service';
+          return responseData;
+        }
+  
+        const specialService = await dbHelper.findOne('specialservice', { _id: id });
+        if (!specialService) {
+          responseData.status = Status.NOT_FOUND;
+          responseData.error = 'Special service not found';
+          return responseData;
+        }
+  
+        await dbHelper.deleteOne('specialservice', { _id: id });
+  
+        responseData.status = Status.OK;
+        responseData.error = null;
+        responseData.message = 'Special service deleted successfully';
+        responseData.specialServiceId = id;
+      } catch (error) {
+        console.error('Error deleting special service:', error);
+        responseData.error = error.message;
+      }
+      return responseData;
+    },
+};
+
+export default specialServiceModule;
+
+function isPresent(value) {
+  return value !== null && value !== undefined && String(value).trim().length > 0;
+}
+
+function isValidPrice(price) {
+  return !isNaN(Number(price)) && Number(price) >= 0;
+}
+

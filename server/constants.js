@@ -16,7 +16,7 @@ export const UserRole = {
     FRONTDESK: "FRONTDESK",
     CRMSTEAM: "CRMS TEAM",
     ACCOUNTING: "ACCOUNTING",
-    ADMIN: "ADMIN"
+    SUPERINTENDENT: "SUPERINTENDENT"
 };
 
 export const Category = {

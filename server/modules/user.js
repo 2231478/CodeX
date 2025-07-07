@@ -10,7 +10,7 @@ const userModule = {
     /**
      * Registers a new user.
      * @param {object} dbHelper - The database helper for database operations.
-     * @param {object} data - The data object containing the email, name, password, and mobileNumber fields.
+     * @param {object} data - The data object containing the email, name, and password fields.
      * @returns {object} Response data with status, error, message, and userId on success.
      */
     register: async (dbHelper, data) => {
@@ -19,12 +19,11 @@ const userModule = {
             error: 'Error on registering user'
         };
         try {
-            const { email, name, password, mobileNumber } = data;
+            const { email, name, password } = data;
             if (
                 !isPresent(email) ||
                 !isPresent(name) ||
-                !isPresent(password) || 
-                !isPresent(mobileNumber)
+                !isPresent(password)
             ) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
@@ -45,11 +44,6 @@ const userModule = {
                 responseData.error = 'Invalid name';
                 return responseData;
             }
-            if(!isValidPhilippineMobileNumber(mobileNumber)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Invalid mobile number';
-                return responseData;
-            }
 
             const emailExists = await dbHelper.findOne('user', { email });
             if (emailExists) {
@@ -63,7 +57,6 @@ const userModule = {
                     email, 
                     name, 
                     password: await hashPassword(password), 
-                    mobileNumber: convertToPlus639Format(mobileNumber),
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
                     lastLoggedIn: null

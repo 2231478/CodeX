@@ -15,6 +15,7 @@ import jwtHelper from './modules/jwtHelper.js';
 import userModule from './modules/user.js';
 import profileModule from './modules/profile.js';
 import facilityModule from './modules/facility.js';
+import specialServiceModule from './modules/specialService.js';
 import { Status } from './constants.js';
 
 dotenv.config();
@@ -84,6 +85,19 @@ const processGetAPI = async (req, res) => {
                 }
                 case 'get-facility-by-id': {
                     let responseData = await facilityModule.getFacilityById(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
+          case 'special-service':
+            switch (action) {
+                case 'get-all-special-services': {
+                    let responseData = await specialServiceModule.getAllSpecialServices(dbHelper);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'get-special-service-by-id': {
+                    let responseData = await specialServiceModule.getSpecialServiceById(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
@@ -186,24 +200,41 @@ const processPostAPI = async (req, res) => {
                 }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
-            }c
+            }
         case 'facility':
-          switch (action) {
-            case 'create-facility': {
-              let responseData = await facilityModule.addFacility(dbHelper, data, req.file, req.user);
-              return res.status(responseData.status).json(responseData);
+            switch (action) {
+              case 'create-facility': {
+                let responseData = await facilityModule.addFacility(dbHelper, data, req.file, req.user);
+                return res.status(responseData.status).json(responseData);
+              }
+              case 'update-facility': {
+                let responseData = await facilityModule.updateFacility(dbHelper, id, data, req.file, req.user);
+                return res.status(responseData.status).json(responseData);
+              }
+              case 'delete-facility': {
+                let responseData = await facilityModule.deleteFacility(dbHelper, id, req.user);
+                return res.status(responseData.status).json(responseData);
+              }
+              default:
+                return res.status(404).json({ error: 'Unknown action' });
             }
-            case 'update-facility': {
-              let responseData = await facilityModule.updateFacility(dbHelper, id, data, req.file, req.user);
-              return res.status(responseData.status).json(responseData);
+        case 'special-service':
+            switch (action) {
+                case 'create-special-service': {
+                    let responseData = await specialServiceModule.addSpecialService(dbHelper, data, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'update-special-service': {
+                    let responseData = await specialServiceModule.updateSpecialService(dbHelper, id, data, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'delete-special-service': {
+                    let responseData = await specialServiceModule.deleteSpecialService(dbHelper, id, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
             }
-            case 'delete-facility': {
-              let responseData = await facilityModule.deleteFacility(dbHelper, id, req.user);
-              return res.status(responseData.status).json(responseData);
-            }
-            default:
-              return res.status(404).json({ error: 'Unknown action' });
-          }
         default:
             return res.status(404).json({ error: 'Unknown module' });
     }
@@ -229,7 +260,8 @@ function isProtected(module, action) {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
     reservation: ['create'],
-    facility: ['create-facility', 'update-facility', 'delete-facility']
+    facility: ['create-facility', 'update-facility', 'delete-facility'],
+    'special-service': ['create-special-service', 'update-special-service', 'delete-special-service']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }

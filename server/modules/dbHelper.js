@@ -8,7 +8,6 @@ const dbHelper = {
                 email: { type: String, required: true, unique: true },
                 name: { type: String, required: true },
                 password: { type: String, required: false },
-                mobileNumber: { type: String, required: false},
                 role: { type: String, enum: Object.values(UserRole), required: true, default: UserRole.GUEST },
                 createdAt: { type: Date, default: Date.now },
                 updatedAt: { type: Date, required: false},
@@ -60,19 +59,19 @@ const dbHelper = {
             });
 
             const FacilitySchema = new mongoose.Schema({
-                name: { type: String, required: true },
+                name: { type: String, required: true, unique: true },
                 facilityType: { type: String, enum: Object.values(FacilityType), required: true },
                 capacity: { type: Number, required: true },
                 ratePerPerson: { type: Number, required: false },
                 status: { type: String, enum: Object.values(FacilityStatus), default: FacilityStatus.AVAILABLE, required: true },
-                image: { type: String, required: true}
+                image: { type: String, required: true},
+                createdAt: { type: Date, default: Date.now }
                 });
             
             const SpecialServiceSchema = new mongoose.Schema({
                 name: { type: String, required: true },
                 price: { type: String, required: true }, 
                 unit: { type: String, required: false }, 
-                notes: { type: String, required: false }, 
                 createdAt: { type: Date, default: Date.now }
             });
 
@@ -104,7 +103,7 @@ const dbHelper = {
     find: async (collectionName, query = {}, projection = {}) => {
         return await mongoose.model(collectionName).find(query, projection);
     },
-    
+
     findOne: async (collectionName, query) => {
         return await mongoose.model(collectionName).findOne(query);
     },
