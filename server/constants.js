@@ -26,6 +26,17 @@ export const Category = {
     OTHERS: "OTHERS"
 };
 
+export const GuestType = {
+    INDIVIDUAL: "INDIVIDUAL",
+    GROUP: "GROUP"
+}
+
+export const ReservationStatus = {
+    PENDING: "PENDING",
+    CONFIRMED: "CONFIRMED",
+    CANCELLED: "CANCELLED"
+}
+
 export const FacilityType = {
     DORMITORY: "DORMITORY",
     COTTAGE: "COTTAGE",
@@ -36,4 +47,8 @@ export const FacilityStatus = {
     AVAILABLE: "AVAILABLE",
     UNAVAILABLE: "UNAVAILABLE",
     UNDERMAINTENCE: "UNDERMAINTENCE"
+}
+
+export const ServiceType = {
+    EVENT: "EVENT"
 }

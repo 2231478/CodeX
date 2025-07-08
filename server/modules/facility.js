@@ -42,6 +42,12 @@ const facilityModule = {
             return responseData;
           }
 
+          if (!image) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Missing image';
+            return responseData;
+          }
+
           if (!isValidFacilityType(facilityType)) {
             responseData.status = Status.BAD_REQUEST;
             responseData.error = 'Invalid facility type';

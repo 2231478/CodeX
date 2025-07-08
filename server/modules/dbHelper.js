@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { UserRole, Category, FacilityType, FacilityStatus } from '../constants.js';
+import { UserRole, Category, GuestType, ReservationStatus, FacilityType, FacilityStatus, ServiceType } from '../constants.js';
 
 const dbHelper = {
     connect: async (connectionString) => {
@@ -32,28 +32,25 @@ const dbHelper = {
                 homeAddress: { type: String, required: true },
                 officeAddress: { type: String, required: false },
                 category: { type: String, enum: Object.values(Category), required: true },
+                guestType: { type: String, enum: Object.values(GuestType), required: true },
                 telephone: { type: String, required: true },
                 officeTelephone: { type: String, required: false },
                 numberOfGuests: {
                     total: { type: Number, required: true },
                     adult: { type: Number, required: true },
-                    children: { type: Number, required: true },
-                    pwds: { type: Number, required: true }
+                    children: { type: Number, required: false },
+                    pwds: { type: Number, required: false }
                 },
                 emergencyContact: { type: String, required: true },
-                // emergencyContact: {
-                //     name: { type: String, required: true },
-                //     phone: { type: String, required: true }
-                //   }
-                dateOfArrival: { type: Date, required: true }, // Check-in date
-                dateOfDeparture: { type: Date, required: true }, // Check-out date
+                dateOfArrival: { type: Date, required: true }, 
+                dateOfDeparture: { type: Date, required: true }, 
+                timeOfArrival: { type: String, required: true },
                 facility: { type: mongoose.Schema.Types.ObjectId, ref: 'facility', required: true },
-                serviceType: { type: String, enum: Object.values(FacilityType), required: true }, //TODO: not sure what are the service types
+                serviceType: { type: String, enum: Object.values(ServiceType), required: true }, 
                 letterOfIntentFile: { type: String, required: true },
-                agreedToTerms: { type: Boolean, required: true },
-                //status: pending, approved, rejected, cancelled
+                status: { type: String, enum: Object.values(ReservationStatus), default: ReservationStatus.PENDING, required: true },
                 totalEstimatedAmount: { type: Number, required: true },
-                specialServices: [{ type: mongoose.Schema.Types.ObjectId, ref: 'specialservice' }],
+                otherRequests: { type: String, required: false },
                 createdAt: { type: Date, default: Date.now },
                 userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }
             });

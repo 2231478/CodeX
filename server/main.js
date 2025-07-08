@@ -14,6 +14,7 @@ import emailModule from './modules/email.js';
 import jwtHelper from './modules/jwtHelper.js';
 import userModule from './modules/user.js';
 import profileModule from './modules/profile.js';
+import reservationModule from './modules/reservation.js';
 import facilityModule from './modules/facility.js';
 import specialServiceModule from './modules/specialService.js';
 import { Status } from './constants.js';
@@ -46,6 +47,9 @@ const basicLimiter = rateLimit({
         error: 'Too many requests, please try again after a minute.'
     }
 });
+
+const uploadImage = multer({ storage: multer.memoryStorage() }).single('image');
+const uploadLetter = multer({ storage: multer.memoryStorage() }).single('letterOfIntentFile');
 
 // const verificationLimiter = rateLimit({
 //     windowMs: 60 * 60 * 1000, // 1 hour
@@ -195,7 +199,7 @@ const processPostAPI = async (req, res) => {
         case 'reservation':
             switch (action) {
                 case 'create-reservation': {
-                    let responseData = await reservationModule.create(dbHelper, req.session, data);
+                    let responseData = await reservationModule.addReservation(dbHelper, data, req.file, req.user);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
@@ -259,7 +263,7 @@ function isProtected(module, action) {
   const protectedEndpoints = {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
-    reservation: ['create'],
+    reservation: ['create-reservation'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
     'special-service': ['create-special-service', 'update-special-service', 'delete-special-service']
   };
@@ -304,14 +308,38 @@ app.get('/api/:module/:action', basicLimiter, (req, res, next) => {
   }
 });
 
-app.post('/api/:module/:action', basicLimiter, upload.single('image'), (req, res, next) => {
-    if (isProtected(req.params.module, req.params.action)) {
+app.post('/api/:module/:action', basicLimiter, (req, res, next) => {
+  const { module, action } = req.params;
+  if (module === 'reservation' && action === 'create-reservation') {
+    uploadLetter(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'File upload error', details: err.message });
+      if (isProtected(module, action)) {
+        authenticateJWT(req, res, () => processPostAPI(req, res));
+      } else {
+        processPostAPI(req, res);
+      }
+    });
+  }
+
+  else if (module === 'facility' && (action === 'create-facility' || action === 'update-facility')) {
+    uploadImage(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'File upload error', details: err.message });
+      if (isProtected(module, action)) {
+        authenticateJWT(req, res, () => processPostAPI(req, res));
+      } else {
+        processPostAPI(req, res);
+      }
+    });
+  }
+  else {
+    if (isProtected(module, action)) {
       authenticateJWT(req, res, () => processPostAPI(req, res));
     } else {
       processPostAPI(req, res);
     }
   }
-);
+});
+
 
 app.get('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
   if (isProtected(req.params.module, req.params.action)) {
@@ -321,14 +349,37 @@ app.get('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
   }
 });
 
-app.post('/api/:module/:action/:id', basicLimiter, upload.single('image'), (req, res, next) => {
-  if (isProtected(req.params.module, req.params.action)) {
-    authenticateJWT(req, res, () => processPostAPI(req, res));
-  } else {
-    processPostAPI(req, res);
+app.post('/api/:module/:action/:id', basicLimiter, (req, res, next) => {
+  const { module, action } = req.params;
+
+  if (module === 'reservation' && action === 'update-reservation') {
+    uploadLetter(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'File upload error', details: err.message });
+      if (isProtected(module, action)) {
+        authenticateJWT(req, res, () => processPostAPI(req, res));
+      } else {
+        processPostAPI(req, res);
+      }
+    });
+  }
+  else if (module === 'facility' && (action === 'update-facility' || action === 'create-facility')) {
+    uploadImage(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'File upload error', details: err.message });
+      if (isProtected(module, action)) {
+        authenticateJWT(req, res, () => processPostAPI(req, res));
+      } else {
+        processPostAPI(req, res);
+      }
+    });
+  }
+  else {
+    if (isProtected(module, action)) {
+      authenticateJWT(req, res, () => processPostAPI(req, res));
+    } else {
+      processPostAPI(req, res);
+    }
   }
 });
-
 
 app.use((req, res) => {
     res.redirect('../error-404.html');

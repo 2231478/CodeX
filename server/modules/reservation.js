@@ -1,7 +1,13 @@
-import { Category, FacilityType } from '../constants.js';
+import { Category, GuestType, Status, UserRole, FacilityStatus, ServiceType } from '../constants.js';
+import { Storage } from '@google-cloud/storage';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const storage = new Storage();
+const bucket = storage.bucket(process.env.PRIVATE_BUCKET_NAME);
 
 const reservationModule = {
-  createReservation: async (dbHelper, userId, data) => {
+  addReservation: async (dbHelper, data, file, user) => {
     const responseData = {
       status: Status.INTERNAL_SERVER_ERROR,
       error: 'Error on booking reservation'
@@ -9,47 +15,51 @@ const reservationModule = {
 
     try {
       const {
-        guestName, homeAddress, officeAddress, category, telephone,
-        officeTelephone, numberOfGuests, numberOfAdults, numberOfPwds, numberOfChildren,
-        emergencyContact, dateOfArrival, dateOfDeparture, facilityType, facilityName,
-        functionType, timeOfArrival, specialRequest, letterOfIntentFile, agreedToTerms
+        guestName, homeAddress, officeAddress, category, guestType,
+        telephone, officeTelephone, numberOfAdults, numberOfChildren, numberOfPwds,
+        emergencyContact, dateOfArrival, dateOfDeparture, facility, 
+        serviceType, timeOfArrival, otherRequests
       } = data;
 
       if (
         !isPresent(guestName) ||
         !isPresent(homeAddress) ||
-        !isPresent(officeAddress) ||
         !isPresent(category) ||
         !isPresent(telephone) ||
-        !isPresent(officeTelephone) ||
-        !isPresent(numberOfGuests) ||
         !isPresent(numberOfAdults) ||
-        !isPresent(numberOfPwds) ||
-        !isPresent(numberOfChildren) ||
         !isPresent(emergencyContact) ||
         !isPresent(dateOfArrival) ||
         !isPresent(dateOfDeparture) ||
-        !isPresent(facilityType) ||
-        !isPresent(facilityName) ||
-        !isPresent(functionType) ||
         !isPresent(timeOfArrival) ||
-        !isPresent(letterOfIntentFile) ||
-        !agreedToTerms
+        !isPresent(facility) ||        
+        !isPresent(serviceType)
       ) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Missing required fields';
         return responseData;
       }
 
-      if (!userId) {
+      if (!user || !user.userId) {
         responseData.status = Status.UNAUTHORIZED;
         responseData.error = 'User not logged in';
         return responseData;
       }
 
-      if(!isValidPhone(telephone)) {
+      if (!file) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Missing Letter of Intent file';
+        return responseData;
+      }
+
+      if (!isValidPhone(telephone)) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Invalid phone number';
+        return responseData;
+      }
+
+      if (!isValidPhone(emergencyContact)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid emergency contact number';
         return responseData;
       }
 
@@ -58,61 +68,168 @@ const reservationModule = {
         responseData.error = 'Invalid category';
         return responseData;
       }
+
       if (!isValidDate(dateOfArrival) || !isValidDate(dateOfDeparture)) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Invalid date format';
         return responseData;
       }
+
       if (!isValidDateRange(dateOfArrival, dateOfDeparture)) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Invalid date range: ensure arrival is today or later, and departure is after arrival';
         return responseData;
       }
-      if (!isValidFacilityType(facilityType)) {
+
+      if(!isValidTime(timeOfArrival)) {
         responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Invalid facility type';
+        responseData.error = 'Invalid time format';
+        return responseData;
+      }
+
+      if (!isValidGuestType(guestType)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid guest type';
+        return responseData;
+      }
+
+      if (!isValidServiceType(serviceType)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid service type';
+        return responseData;
+      }
+
+      if (!isValidLength((otherRequests || '').trim(), 500)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Requests must be 500 characters or less';
+        return responseData;
+      }
+
+      if (!isValidFile(file)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid or missing Letter of Intent file';
+        return responseData;
+      }
+
+      if (
+        !isNonNegativeInteger(numberOfAdults) ||
+        !isNonNegativeInteger(numberOfChildren) ||
+        !isNonNegativeInteger(numberOfPwds)
+      ) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Guest counts must be non-negative integers';
         return responseData;
       }
 
       const adults = parseInt(numberOfAdults) || 0;
       const children = parseInt(numberOfChildren) || 0;
       const pwds = parseInt(numberOfPwds) || 0;
-      const manualTotal = parseInt(numberOfGuests) || 0;
-      const computedTotal = adults + children + pwds;
+      const total = adults + children + pwds;
 
-      if (manualTotal !== computedTotal) {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'The total number of guests does not match the breakdown of guests';
-        return responseData;
-      }
-      if (computedTotal <= 0) {
+      if (total <= 0) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'At least one guest is required';
         return responseData;
       }
 
-      const overlapping = await dbHelper.findOne('reservation', {
-        facility: data.facility, // Make sure this is the facility's ObjectId as in your input
+      const facilityDoc = await dbHelper.findOne('facility', { _id: facility });
+      if (!facilityDoc) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Selected facility does not exist';
+        return responseData;
+      }
+
+      if (facilityDoc.status !== FacilityStatus.AVAILABLE) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Facility is not available for booking.';
+        return responseData;
+      }
+
+      const userOverlapping = await dbHelper.findOne('reservation', {
+        userId: user._id,
+        facility: facility,
         $or: [
-            {
-            dateOfArrival: { $lte: new Date(data.dateOfDeparture) },
-            dateOfDeparture: { $gte: new Date(data.dateOfArrival) }
-            }
+          {
+            dateOfArrival: { $lte: new Date(dateOfDeparture) },
+            dateOfDeparture: { $gte: new Date(dateOfArrival) }
+          }
         ]
-        });
-        
-        if (overlapping) {
+      });
+
+      if (userOverlapping) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'You already have a reservation for this facility that overlaps with these dates.';
+        return responseData;
+      }
+
+      const overlapping = await dbHelper.findOne('reservation', {
+        facility: facility, 
+        $or: [
+          {
+            dateOfArrival: { $lte: new Date(dateOfDeparture) },
+            dateOfDeparture: { $gte: new Date(dateOfArrival) }
+          }
+        ]
+      });
+
+      if (overlapping) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Facility is not available for the selected dates.';
         return responseData;
-        }
+      }
+
+      if (total > facilityDoc.capacity) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = `Number of guests (${total}) exceeds the facility capacity (${facilityDoc.capacity}).`;
+        return responseData;
+      }
+
+      let letterOfIntentUrl = null;
+      if (file) {
+      try {
+        const filename = `letter_of_intent/${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
+        const blob = bucket.file(filename);
+        await new Promise((resolve, reject) => {
+          const stream = blob.createWriteStream({
+            resumable: false,
+            contentType: file.mimetype,
+          });
+          stream.on('error', reject);
+          stream.on('finish', resolve);
+          stream.end(file.buffer);
+        });
+        letterOfIntentUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+      } catch (err) {
+        responseData.status = Status.INTERNAL_SERVER_ERROR;
+        responseData.error = 'Letter of Intent upload failed: ' + err.message;
+        return responseData;
+      }
+    }
 
       const reservationData = {
-        guestName, homeAddress, officeAddress, category, telephone, officeTelephone,
-        numberOfGuests: manualTotal, numberOfAdults: adults, numberOfChildren: children, numberOfPwds: pwds,
-        emergencyContact, dateOfArrival, dateOfDeparture, facilityType, facilityName,
-        functionType, timeOfArrival, specialRequest, letterOfIntentFile,
-        agreedToTerms, userId,
+        guestName,
+        homeAddress,
+        officeAddress,
+        category,
+        guestType,
+        telephone,
+        officeTelephone,
+        numberOfGuests: {
+          total: total,
+          adult: adults,
+          children: children,
+          pwds: pwds
+        },
+        emergencyContact,
+        dateOfArrival: normalizeDateOnly(dateOfArrival),
+        dateOfDeparture: normalizeDateOnly(dateOfDeparture),
+        timeOfArrival,
+        facility: facilityDoc._id,  
+        serviceType,
+        otherRequests,
+        letterOfIntentFile: letterOfIntentUrl,
+        totalEstimatedAmount: total * facilityDoc.ratePerPerson,
+        userId: user.userId,
         createdAt: new Date()
       };
 
@@ -132,6 +249,7 @@ const reservationModule = {
 
 export default reservationModule;
 
+
 function isValidPhone(number) {
     return /^(\+63|0)9\d{9}$/.test(number);
 }
@@ -140,19 +258,32 @@ function isValidCategory(category) {
     return Object.values(Category).includes(category);
 }
 
-function isValidDate(dateStr) {
-    const dateFormatRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateFormatRegex.test(dateStr)) return false;
+function isValidGuestType(type) {
+    return Object.values(GuestType).includes(type);
+}
 
-    const date = new Date(dateStr);
+function isNonNegativeInteger(value) {
+  return Number.isInteger(Number(value)) && Number(value) >= 0;
+}
+
+function isValidDate(dateStr) {
+    if (!dateStr) return false;
+
+    const dateOnly = dateStr.split('T')[0].split(' ')[0];
+
+    const dateFormatRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateFormatRegex.test(dateOnly)) return false;
+
+    const date = new Date(dateOnly);
     return !isNaN(date.getTime());
 }
+
 
 function isValidDateRange(dateOfArrival, dateOfDeparture) {
     if (!isValidDate(dateOfArrival) || !isValidDate(dateOfDeparture)) return false;
 
-    const arrival = new Date(dateOfArrival);
-    const departure = new Date(dateOfDeparture);
+    const arrival = new Date(dateOfArrival.split('T')[0].split(' ')[0]);
+    const departure = new Date(dateOfDeparture.split('T')[0].split(' ')[0]);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -170,8 +301,32 @@ function isValidDateRange(dateOfArrival, dateOfDeparture) {
     return true;
 }
 
-function isValidFacilityType(type) {
-    return Object.values(FacilityType).includes(type);
+function normalizeDateOnly(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const datePart = dateStr.split('T')[0].split(' ')[0];
+  const normalized = new Date(datePart + "T00:00:00");
+  return isNaN(normalized.getTime()) ? null : normalized;
+}
+
+function isValidTime(timeStr) {
+    const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    return timeFormatRegex.test(timeStr);
+}
+
+function isValidServiceType(type) {
+    return Object.values(ServiceType).includes(type);
+}
+
+function isValidLength(value, maxLength) {
+  if (!value) return true; 
+  return value.length <= maxLength;
+}
+
+function isValidFile(file) {
+  if (!file) return false;
+  const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const maxFileSize = 5 * 1024 * 1024; // 5MB
+  return allowedTypes.includes(file.mimetype) && file.size <= maxFileSize;
 }
 
 function isPresent(value) {
