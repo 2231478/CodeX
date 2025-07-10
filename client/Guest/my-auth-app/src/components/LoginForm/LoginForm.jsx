@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import styles from '../AuthFormContainer/AuthFormContainer.module.css'; // Reusing common styles
-import { FaFacebookF, FaGoogle } from 'react-icons/fa'; // Requires react-icons: npm install react-icons
+import styles from '../AuthFormContainer/AuthFormContainer.module.css';
+import { FaFacebookF, FaGoogle } from 'react-icons/fa';
 
-function LoginForm() {
+function LoginForm({ onForgotPassword }) { 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -10,7 +10,7 @@ function LoginForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Login attempt:', { email, password });
-    // Add actual login logic here (e.g., API call)
+    // Add login logic 
   };
 
   return (
@@ -34,7 +34,7 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ marginBottom: '0' }} /* Remove extra margin */
+            style={{ marginBottom: '0' }}
           />
           <span
             style={{ position: 'absolute', right: '10px', top: '12px', cursor: 'pointer', fontSize: '0.9em', color: '#666' }}
@@ -44,7 +44,9 @@ function LoginForm() {
           </span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-            <a href="#" style={{ fontSize: '0.9em', color: '#666', textDecoration: 'none' }}>
+            {/* Call onForgotPassword when clicked */}
+            <a href="#" onClick={(e) => { e.preventDefault(); onForgotPassword(); }}
+               style={{ fontSize: '0.9em', color: '#666', textDecoration: 'none' }}>
                 Forgot Password?
             </a>
         </div>
