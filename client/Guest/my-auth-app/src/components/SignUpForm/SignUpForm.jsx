@@ -20,7 +20,7 @@ function SignUpForm() {
         return;
     }
     console.log('Sign Up attempt:', { email, username, password, agreedToTerms });
-    // Add actual signup logic here (e.g., API call)
+    // Add signup logic
   };
 
   return (

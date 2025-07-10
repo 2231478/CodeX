@@ -5,8 +5,14 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  width: 100%;
   background-color: #f0f2f5; /* A light background color */
   overflow: hidden; /* Prevent scroll if content is centered */
+}
+
+#root { /* If your app is mounted on a div with id="root" in index.html */
+  width: 100%;
+  height: 100%;
 }
 
 /* Common button styles */
