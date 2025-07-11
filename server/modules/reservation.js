@@ -1,4 +1,4 @@
-import { Category, GuestType, Status, UserRole, FacilityStatus, ServiceType } from '../constants.js';
+import { Category, GuestType, Status, UserRole, FacilityStatus, ServiceType, ReservationStatus } from '../constants.js';
 import { Storage } from '@google-cloud/storage';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -357,17 +357,20 @@ const reservationModule = {
         return responseData;
       }
 
-      const updatedReservation = await dbHelper.findByIdAndUpdate(
+      const updatedReservation = await dbHelper.findOneAndUpdate(
         'reservation',
-        reservationId,
-        { status: ReservationStatus.CANCELLED, cancelledAt: new Date() },
+        { _id: reservationId },
+        { status: ReservationStatus.CANCELLED },
         { new: true }
       );
 
       responseData.status = Status.OK;
       responseData.error = null;
       responseData.message = 'Reservation cancelled successfully';
-      responseData.reservation = updatedReservation;
+      responseData.reservation = {
+        _id: updatedReservation._id,
+        status: updatedReservation.status
+      };
     } catch (error) {
       console.error('Error cancelling reservation:', error);
       responseData.error = error.message;

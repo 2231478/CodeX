@@ -421,6 +421,76 @@ const facilityModule = {
       responseData.error = error.message;
     }
     return responseData;
+  },
+
+  /**
+   * Fetches all available dates for a given facility.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} facilityId - The ID of the facility to check availability for.
+   * @returns {Object} Response data with status, error, and an array of available dates on success.
+   */
+  getAvailableDatesByFacility: async (dbHelper, facilityId) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching available dates',
+      availableDates: []
+    };
+
+    try {
+      if (!facilityId) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Missing facility ID';
+        return responseData;
+      }
+
+      const facility = await dbHelper.findOne('facility', { _id: facilityId });
+      if (!facility) {
+        responseData.status = Status.NOT_FOUND;
+        responseData.error = 'Facility not found';
+        return responseData;
+      }
+
+      // Define the date range to check (e.g., next 6 months)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date();
+      endDate.setMonth(today.getMonth() + 6); // Check for next 6 months
+
+      const reservations = await dbHelper.find('reservation', {
+        facility: facilityId,
+        $or: [
+          { dateOfArrival: { $lte: endDate }, dateOfDeparture: { $gte: today } }
+        ]
+      });
+
+      const unavailableDates = new Set();
+      reservations.forEach(reservation => {
+        let currentDate = new Date(reservation.dateOfArrival);
+        while (currentDate <= reservation.dateOfDeparture) {
+          unavailableDates.add(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      });
+
+      const availableDates = [];
+      let currentDate = new Date(today);
+      while (currentDate <= endDate) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        if (!unavailableDates.has(dateString)) {
+          availableDates.push(dateString);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.availableDates = availableDates;
+
+    } catch (error) {
+      console.error('Error fetching available dates:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
   }
 };
 

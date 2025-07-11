@@ -95,6 +95,10 @@ const processGetAPI = async (req, res) => {
                     let responseData = await facilityModule.getFacilitiesByType(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'get-available-dates-by-facility': {
+                    let responseData = await facilityModule.getAvailableDatesByFacility(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
