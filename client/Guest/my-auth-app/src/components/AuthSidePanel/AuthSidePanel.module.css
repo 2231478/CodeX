@@ -1,6 +1,6 @@
 .sidePanel {
-  flex: 1; /* Takes up one part of the flex container */
-  background-color: #558B55; /* Green background */
+  flex: 1; 
+  background-color: #558B55;
   color: white;
   display: flex;
   flex-direction: column;
@@ -8,49 +8,60 @@
   align-items: center;
   padding: 20px;
   text-align: center;
-  border-radius: 15px 0 0 15px; /* Rounded left corners */
+  border-radius: 15px 0 0 15px;
 }
 
 .logoContainer {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .logo {
-  width: 100px; /* Adjust size as needed */
+  width: 200px; 
   height: auto;
 }
 
 .logoText {
-  font-size: 1.1em;
+  font-size: 1.5em;
   font-weight: bold;
-  margin-top: 10px;
+  margin-top: 20px;
+  margin-bottom: 0px;
 }
 
 .textContent h2 {
-  font-size: 2.5em;
+  margin-top: 0;
+  font-size: 2.3em;
   margin-bottom: 10px;
-  line-height: 1.2;
+  line-height: 1.1;
+}
+
+.textContent .welcomeHeading {
+  font-size: 2.7em;
+  margin-bottom: 10px;
+  line-height: 1.1;
+  color: white;
 }
 
 .textContent p {
-  font-size: 1.1em;
+  font-size: 0.9em;
   line-height: 1.5;
 }
 
 .promptText {
-  margin-top: 40px; /* Space before "Already have an account?" */
+  margin-top: 40px; 
   margin-bottom: 15px;
 }
 
 .toggleButton {
-  background-color: #386A38; /* Darker green for button */
+  background-color: #1E3C24; 
   color: white;
   padding: 12px 30px;
   font-size: 1.1em;
   transition: background-color 0.3s ease;
   min-width: 150px;
+  border-radius: 25px;
 }
 
 .toggleButton:hover {
-  background-color: #2a522a;
+  background-color: #F5F5F5;
+  color:#1E3C24
 }

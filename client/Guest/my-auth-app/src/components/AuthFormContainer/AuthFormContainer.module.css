@@ -1,23 +1,23 @@
 .formContainer {
-  flex: 1.5; /* Takes up more space than the side panel */
-  background: rgba(255, 255, 255, 0.85); /* Slightly less transparent for the form itself */
+  flex: 1.5; 
+  background: rgba(255, 255, 255, 0.85); 
   padding: 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-radius: 0 15px 15px 0; /* Rounded right corners */
+  border-radius: 0 15px 15px 0;
 }
 
 .formContainer h2 {
   font-size: 2em;
   margin-bottom: 10px;
-  color: #333;
+  color: #1E3C24;
 }
 
 .formContainer p {
   font-size: 0.9em;
-  color: #666;
+  color: #213f27b5;
   margin-bottom: 30px;
   text-align: center;
 }
@@ -25,59 +25,56 @@
 .formInput {
   width: 100%;
   padding: 12px 15px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 25px;
   font-size: 1em;
-  box-sizing: border-box; /* Include padding in width */
+  box-sizing: border-box;
 }
 
 .formButton {
-  background-color: #386A38; /* Green for main buttons */
+  background-color: #1E3C24;
   color: white;
   padding: 12px 20px;
   font-size: 1.1em;
   width: 100%;
-  margin-top: 20px;
+  margin-top: 10px;
   transition: background-color 0.3s ease;
+  border-radius: 25px;
 }
 
 .formButton:hover {
-  background-color: #2a522a;
+  background-color: #558B55;
 }
 
 .socialLogin {
   display: flex;
-  gap: 15px;
-  margin-top: 20px;
+  gap: 20px;
+  margin-top: 10px;
+  justify-content: center;
 }
 
 .socialButton {
   background-color: #fff;
   border: 1px solid #ddd;
-  padding: 10px 15px;
-  border-radius: 5px;
+  padding: 10px 10px;
+  border-radius: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5em; /* For the icons */
+  font-size: 1.5em;
   width: 50px;
   height: 50px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(16, 69, 4, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .socialButton:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
 }
 
 .orSeparator {
-  margin: 20px 0;
+  margin: 20px;
   color: #888;
   font-size: 0.9em;
-}
-
-.form-group {
-  width: 100%;
-  max-width: 350px; /* Limit form width */
 }
