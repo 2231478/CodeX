@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import commonStyles from '../AuthFormContainer/AuthFormContainer.module.css';
-import styles from './ForgotPasswordForm.module.css'; // For specific styles if any
+import styles from './ForgotPasswordForm.module.css'; 
 
 function ForgotPasswordForm({ onBackToLogin }) {
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState(''); // To show success/error messages
+  const [message, setMessage] = useState(''); 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setMessage(''); // Clear previous messages
+    setMessage(''); 
 
     if (!email) {
       setMessage('Please enter your email address.');
       return;
     }
 
-    // Simulate an API call for password reset
+  
     console.log('Forgot password request for:', email);
     setMessage('If an account with that email exists, a password reset link has been sent.');
     // In a real app:
@@ -37,19 +37,19 @@ function ForgotPasswordForm({ onBackToLogin }) {
   };
 
   return (
-    <div className={commonStyles.formGroup}> {/* Use common form group styling */}
+    <div className={commonStyles.formGroup}> 
       <h2>Forgot Password?</h2>
       <p>Enter your email and we'll send you a link to reset your password.</p>
       <form onSubmit={handleSubmit}>
         <input
           type="email"
           placeholder="Email"
-          className={commonStyles.formInput} // Use common input styling
+          className={commonStyles.formInput} 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        {message && <p className={styles.message}>{message}</p>} {/* Display message */}
+        {message && <p className={styles.message}>{message}</p>} 
         <button type="submit" className={commonStyles.formButton}>
           Send Reset Link
         </button>
