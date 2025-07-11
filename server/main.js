@@ -91,6 +91,10 @@ const processGetAPI = async (req, res) => {
                     let responseData = await facilityModule.getFacilityById(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'get-facility-by-type': {
+                    let responseData = await facilityModule.getFacilityByType(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }

@@ -381,6 +381,44 @@ const facilityModule = {
       responseData.error = error.message;
     }
     return responseData;
+  },
+
+  /**
+   * Fetches facilities by their type.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} facilityType - The type of the facility to be fetched.
+   * @returns {Object} Response data with status, error, and facilities on success.
+   */
+  getFacilityByType: async (dbHelper, facilityType) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching facilities by type',
+      facilities: []
+    };
+
+    if (!isPresent(facilityType)) {
+      responseData.status = Status.BAD_REQUEST;
+      responseData.error = 'Missing facility type';
+      return responseData;
+    }
+
+    if (!isValidFacilityType(facilityType)) {
+      responseData.status = Status.BAD_REQUEST;
+      responseData.error = 'Invalid facility type';
+      return responseData;
+    }
+
+    try {
+      const facilities = await dbHelper.find('facility', { facilityType: facilityType.trim() }, { __v: 0, createdAt: 0 });
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.facilities = facilities;
+    } catch (error) {
+      console.error('Error fetching facilities by type:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
   }
 };
 
@@ -401,7 +439,8 @@ function isValidCapacity(cap) {
   return /^\d+$/.test(cap) && parseInt(cap) > 0;
 }
 function isValidRate(rate) {
-  return !rate || (!isNaN(parseFloat(rate)) && parseFloat(rate) >= 0);
+  const parsedRate = parseFloat(rate);
+  return !isNaN(parsedRate) && parsedRate >= 0;
 }
 
 function isValidImage(file) {
