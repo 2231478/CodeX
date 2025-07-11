@@ -4,8 +4,8 @@ import nodemailer  from 'nodemailer';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_ADDRESS || 'jmarellanocreation@gmail.com',
-    pass: process.env.EMAIL_PASSWORD || 'tixj syal edok chzm'
+    user: process.env.EMAIL_ADDRESS,
+    pass: process.env.EMAIL_PASSWORD
   }
 });
 
@@ -19,7 +19,7 @@ const emailModule = {
             try {
                 // TODO update email text on production
                 const mailOptions = {
-                    from: process.env.EMAIL_ADDRESS || 'jmarellanocreation@gmail.com',
+                    from: process.env.EMAIL_ADDRESS,
                     to: email,
                     subject: 'Your Verification Link',
                     text: `Your verification link is: ${ process.env.HOST || 'http://localhost' }:${ process.env.PORT || 3000 }/api/user/verify-verification-code?email=${email}&verificationCode=${verificationCode}`,
@@ -44,37 +44,33 @@ const emailModule = {
         }
         return responseData;
     },
-    sendResetPassword: async (email, newGeneratedPassword) => {
+    sendPasswordResetLink: async (email, resetToken) => {
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on sending reset password'
+            error: 'Error on sending password reset link'
         };
         try {
-            try {
-                // TODO update email text on production
-                const mailOptions = {
-                    from: process.env.EMAIL_ADDRESS || 'jmarellanocreation@gmail.com',
-                    to: email,
-                    subject: 'Your New Password',
-                    text: `Your new password is: ${newGeneratedPassword}`,
-                    html: `Your new password is: ${newGeneratedPassword}`
-                };
-                
-                try {
-                    const info = await transporter.sendMail(mailOptions);
-                    console.log('Email sent: ' + info.response);
-                    
-                    responseData.status = Status.OK;
-                    responseData.error = null;
+            const resetLink = `${process.env.HOST || 'http://localhost'}:${process.env.PORT || 3000}/reset-password?token=${resetToken}&email=${email}`;
+            const mailOptions = {
+                from: process.env.EMAIL_ADDRESS || 'jmarellanocreation@gmail.com',
+                to: email,
+                subject: 'Password Reset Request',
+                text: `You requested a password reset. Click this link to reset your password: ${resetLink}`,
+                html: `<p>You requested a password reset. Click this link to reset your password:</p><a href="${resetLink}">${resetLink}</a>`
+            };
 
-                } catch (error) {
-                    console.error('Error on sending reset password:', error);
-                }
+            try {
+                const info = await transporter.sendMail(mailOptions);
+                console.log('Email sent: ' + info.response);
+                
+                responseData.status = Status.OK;
+                responseData.error = null;
+
             } catch (error) {
-                console.error('Error on sending reset password:', error);
-            }   
+                console.error('Error on sending password reset link:', error);
+            }
         } catch (error) {
-            console.error('Error on sending reset password:', error);
+            console.error('Error on sending password reset link:', error);
         }
         return responseData;
     }

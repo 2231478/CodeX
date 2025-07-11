@@ -181,6 +181,13 @@ const processPostAPI = async (req, res) => {
                     let responseData = await userModule.changePassword(dbHelper, req.session, data);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'forgot-password': {
+                    const responseData = await userModule.forgotPassword(dbHelper, data.email);
+                    if (responseData.status === Status.OK && responseData.resetToken) {
+                        await emailModule.sendPasswordResetLink(data.email, responseData.resetToken);
+                    }
+                    return res.status(responseData.status).json(responseData);
+                }
                 // case 'reset-password': {
                 //     let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
                 //     let newGeneratedPassword = userModule.generateValidPassword();

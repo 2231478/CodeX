@@ -3,6 +3,7 @@ import { Status, UserRole } from '../constants.js';
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import jwtHelper from './jwtHelper.js';
+import crypto from 'crypto';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -195,173 +196,73 @@ const userModule = {
     return responseData;
     },
 
-  /**
-  * Logs in or registers a user via Facebook OAuth.
-  * @param {Object} dbHelper - The database helper for database operations.
-  * @param {Object} session - The session object for the current user.
-  * @param {Object} data - The data object containing the Facebook token.
-  * @returns {Object} Response data with status, error, message, and userId on success.
-  */
-  facebookLogin: async (dbHelper, data) => {
-    const responseData = {
-        status: Status.INTERNAL_SERVER_ERROR,
-        error: 'Error on logging in with Facebook'
-    };
+    /**
+     * Logs in or registers a user via Facebook OAuth.
+     * @param {Object} dbHelper - The database helper for database operations.
+     * @param {Object} session - The session object for the current user.
+     * @param {Object} data - The data object containing the Facebook token.
+     * @returns {Object} Response data with status, error, message, and userId on success.
+     */
+    facebookLogin: async (dbHelper, data) => {
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on logging in with Facebook'
+        };
 
-    try {
-        if (!data.token) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing Facebook token';
-            return responseData;
+        try {
+            if (!data.token) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Missing Facebook token';
+                return responseData;
+            }
+
+            const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${data.token}`);
+            const fbData = await fbRes.json();
+
+            if (!fbData || !fbData.id || !fbData.email) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid Facebook token or missing user data';
+                return responseData;
+            }
+
+            const { id: facebookId, email, name } = fbData;
+
+            let user = await dbHelper.findOne('user', { facebookId });
+
+            if (!user) {
+                user = await dbHelper.create('user', {
+                    facebookId,
+                    email,
+                    name,
+                    role: UserRole.GUEST,
+                    createdAt: new Date().valueOf()
+                });
+            }
+
+            const accessToken = jwtHelper.generateAccessToken(user);
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'User logged in with Facebook successfully';
+            responseData.userId = user._id.toString();
+            responseData.role = user.role;
+            responseData.accessToken = accessToken;
+
+        } catch (error) {
+            console.error('Error logging in with Facebook:', error);
+            responseData.error = error.message;
         }
 
-        const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${data.token}`);
-        const fbData = await fbRes.json();
-
-        if (!fbData || !fbData.id || !fbData.email) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid Facebook token or missing user data';
-            return responseData;
-        }
-
-        const { id: facebookId, email, name } = fbData;
-
-        let user = await dbHelper.findOne('user', { facebookId });
-
-        if (!user) {
-            user = await dbHelper.create('user', {
-                facebookId,
-                email,
-                name,
-                role: UserRole.GUEST,
-                createdAt: new Date().valueOf()
-            });
-        }
-
-        const accessToken = jwtHelper.generateAccessToken(user);
-
-        responseData.status = Status.OK;
-        responseData.error = null;
-        responseData.message = 'User logged in with Facebook successfully';
-        responseData.userId = user._id.toString();
-        responseData.role = user.role;
-        responseData.accessToken = accessToken;
-
-    } catch (error) {
-        console.error('Error logging in with Facebook:', error);
-        responseData.error = error.message;
-    }
-
-    return responseData;
-},
+        return responseData;
+    },
 
     /**
-     * Logs out the user from the system
-     * @param {object} session the express session object
-     * @returns {object} the response data object containing the status and error fields
+     * Resets a user's password.
+     * @param {Object} dbHelper - The database helper for database operations.
+     * @param {string} email - The email address of the user to reset the password for.
+     * @param {string} newGeneratedPassword - The new password to set for the user.
+     * @returns {Object} Response data with status, error, and message.
      */
-    logout: (session) => {
-        const responseData = {
-            status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on logging out user'
-        };
-        try {
-            session.destroy(err => {
-                if (err) {
-                    console.error('Error logging out user:', err);
-                }
-            });
-            responseData.status = Status.OK;
-            responseData.error = null;
-            responseData.message = 'User logged out successfully';
-        } catch (error) {
-            console.error('Error logging out user:', error);
-        }
-        return responseData;
-    },
-
-    getUser: async (dbHelper, session) => {
-        const responseData = {
-            status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on getting user profile'
-        };
-        try {
-            if (!session.userEmail) {
-                responseData.status = Status.UNAUTHORIZED;
-                responseData.error = 'Unauthorized';
-                return responseData;
-            }
-
-            const user = await dbHelper.findOne('user', { email: session.userEmail });
-            if (!user) {
-                responseData.status = Status.NOT_FOUND;
-                responseData.error = 'User not found';
-                return responseData;
-            }
-
-            const userObject = user.toObject();
-            delete userObject.password;
-            delete userObject.__v;
-
-            responseData.status = Status.OK;
-            responseData.error = null;
-            responseData.message = 'User profile retrieved successfully';
-            responseData.data = userObject;
-
-        } catch (error) {
-            console.error('Error on getting user profile:', error);
-        }
-        return responseData;
-    },
-    changePassword: async (dbHelper, session, data) => {
-        const responseData = { 
-            status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on changing password'
-        };
-        try {
-            const { oldPassword, newPassword } = data;
-            if (!isPresent(oldPassword) || !isPresent(newPassword)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Missing required fields';
-                return responseData;
-            }
-
-            if (!session.userEmail) {
-                responseData.status = Status.UNAUTHORIZED;
-                responseData.error = 'Unauthorized';
-                return responseData;
-            }
-
-            if (!isValidPassword(newPassword) ) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Invalid new password';
-                return responseData;
-            }
-
-            const user = await dbHelper.findOne('user', { email: session.userEmail });
-            if (!user) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'User not found';
-                return responseData;
-            }
-
-            const userObject = user.toObject();
-            if (!await isMatchedPassword(oldPassword, userObject.password)) {
-                responseData.status = Status.BAD_REQUEST;
-                responseData.error = 'Invalid old password';
-                return responseData;
-            }
-
-            const hashedPassword = await hashPassword(newPassword);
-            await dbHelper.updateOne('user', { email: session.userEmail }, { password: hashedPassword, updatedAt: new Date().valueOf() });
-            responseData.status = Status.OK;
-            responseData.error = null;
-            responseData.message = 'Password changed successfully';
-        } catch (error) {
-            console.error('Error on changing password:', error);
-        }
-        return responseData;
-    },
     resetPassword: async (dbHelper, email, newGeneratedPassword) => {
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
@@ -402,6 +303,54 @@ const userModule = {
             responseData.message = 'Password reset successfully';
         } catch (error) {
             console.error('Error on resetting password:', error);
+        }
+        return responseData;
+    },
+
+    
+    /**
+     * Sends a password reset link to the user's email if it exists in the system.
+     * @param {Object} dbHelper - The database helper for database operations.
+     * @param {string} email - The email address of the user for whom the password reset link is requested.
+     * @returns {Object} Response data with status, error, and message. If the user exists, a reset token is also included.
+     */
+    forgotPassword: async (dbHelper, email) => {
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on sending password reset link'
+        };
+        try {
+            if (!isPresent(email)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Missing required fields';
+                return responseData;
+            }
+
+            if (!isValidEmail(email)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid email address';
+                return responseData;
+            }
+
+            const user = await dbHelper.findOne('user', { email });
+            if (!user) {
+                responseData.status = Status.OK;
+                responseData.error = null;
+                responseData.message = 'Password reset link sent successfully';
+                return responseData;
+            }
+
+            const resetToken = generateResetToken();
+            const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+
+            await dbHelper.updateOne('user', { email }, { resetToken, resetTokenExpiry });
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'Password reset link sent successfully';
+            responseData.resetToken = resetToken; 
+        } catch (error) {
+            console.error('Error on sending password reset link:', error);
         }
         return responseData;
     },
@@ -468,7 +417,6 @@ async function hashPassword(password) {
     return hashedPassword;
 }
 
-async function isMatchedPassword(password, hashedPassword) {
-    const match = await bcrypt.compare(password, hashedPassword);
-    return match;
+function generateResetToken() {
+    return crypto.randomBytes(20).toString('hex');
 }
