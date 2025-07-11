@@ -1,0 +1,44 @@
+.signUpFormGroup {
+  width: 100%;
+  max-width: 450px;
+}
+
+.signUpFormGroup h2 {
+    font-size: 1.8em; 
+    margin-bottom: 8px;
+}
+
+.signUpFormGroup p {
+    font-size: 0.9em;
+    margin-bottom: 25px;
+}
+
+.signUpFormInput {
+  padding: 10px 12px; 
+  margin-bottom: 15px; 
+  border-radius: 25px;
+  font-size: 0.8em;
+}
+
+.signUpFormButton {
+  padding: 10px 12px;
+  border-radius: 25px; 
+  font-size: 1em;
+  margin-bottom: 15px;
+}
+
+.signUpOrSeparator {
+    font-size: 0.8em; 
+    margin: 0; 
+}
+
+.signUpSocialButton {
+  margin: 0;
+  width: 35px; 
+  height: 35px; 
+  font-size: 1em; 
+}
+
+.signUpCheckboxLabel {
+    font-size: 0.8em;
+}

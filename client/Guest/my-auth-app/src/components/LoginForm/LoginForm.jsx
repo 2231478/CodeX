@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from '../AuthFormContainer/AuthFormContainer.module.css';
-import { FaFacebookF, FaGoogle } from 'react-icons/fa';
+import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function LoginForm({ onForgotPassword }) { 
   const [email, setEmail] = useState('');
@@ -37,16 +37,16 @@ function LoginForm({ onForgotPassword }) {
             style={{ marginBottom: '0' }}
           />
           <span
-            style={{ position: 'absolute', right: '10px', top: '12px', cursor: 'pointer', fontSize: '0.9em', color: '#666' }}
+            style={{position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#666', fontSize: '1.1em' }}
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'} 
           >
-            {showPassword ? 'Hide' : 'Show'} Password
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
           </span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-            {/* Call onForgotPassword when clicked */}
             <a href="#" onClick={(e) => { e.preventDefault(); onForgotPassword(); }}
-               style={{ fontSize: '0.9em', color: '#666', textDecoration: 'none' }}>
+               style={{ fontSize: '0.9em', color: '#1E3C24', textDecoration: 'none' }}>
                 Forgot Password?
             </a>
         </div>
