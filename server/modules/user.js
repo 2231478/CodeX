@@ -20,7 +20,9 @@ const userModule = {
             error: 'Error on registering user'
         };
         try {
-            const { email, name, password } = data;
+            let { email, name, password } = data;
+            email = email.trim();
+            name = name.trim();
             if (
                 !isPresent(email) ||
                 !isPresent(name) ||
@@ -30,16 +32,19 @@ const userModule = {
                 responseData.error = 'Missing required fields';
                 return responseData;
             }
+
             if (!isValidEmail(email)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Invalid email address';
                 return responseData;
             }
+
             if (!isValidPassword(password)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Invalid password';
                 return responseData;
             }
+
             if (!isValidName(name)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Invalid name';
@@ -60,7 +65,7 @@ const userModule = {
                     password: await hashPassword(password), 
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
-                    lastLoggedIn: null
+                    lastLoggedIn: new Date().valueOf()
                 });                
 
                 responseData.status = Status.OK;
@@ -70,6 +75,8 @@ const userModule = {
                 responseData.role = userCreated.role;
             } catch (error) {
                 console.error('Error registering user:', error);
+                responseData.status = Status.INTERNAL_SERVER_ERROR;
+                responseData.error = error.message;
             }
         } catch (error) {
             console.error('Error registering user:', error);
@@ -80,7 +87,6 @@ const userModule = {
     /**
      * Logs in a user to the system
      * @param {object} dbHelper the database helper object
-     * @param {object} session the express session object
      * @param {object} data the data object containing the email and password fields
      * @returns {object} the response data object containing the status and error fields
      */
@@ -90,7 +96,9 @@ const userModule = {
         error: 'Error on logging in user'
         };
         try {
-        const { email, password } = data;
+        let { email, password } = data;
+        email = email.trim();
+
         if (!isPresent(email) || !isPresent(password)) {
             responseData.status = Status.BAD_REQUEST;
             responseData.error = 'Missing required fields';
@@ -122,7 +130,7 @@ const userModule = {
         
         const accessToken = jwtHelper.generateAccessToken(userObject);
 
-        dbHelper.updateOne('user', { email }, { lastLoggedIn: new Date().valueOf() });
+        await dbHelper.updateOne('user', { email }, { lastLoggedIn: new Date().valueOf() });
 
         responseData.status = Status.OK;
         responseData.error = null;
@@ -141,7 +149,6 @@ const userModule = {
     /**
      * Logs in or registers a user via Google OAuth.
      * @param {Object} dbHelper - The database helper for database operations.
-     * @param {Object} session - The session object for the current user.
      * @param {Object} data - The data object containing the Google ID token.
      * @returns {Object} Response data with status, error, message, and userId on success.
      */
@@ -170,13 +177,21 @@ const userModule = {
 
         let user = await dbHelper.findOne('user', { googleId });
         if (!user) {
-        user = await dbHelper.create('user', {
-            email,
-            name,
-            googleId,
-            role: UserRole.GUEST,
-            createdAt: new Date().valueOf()
-        });
+            user = await dbHelper.findOne('user', { email });
+            if (user) {
+                await dbHelper.updateOne('user', { email }, { googleId, lastLoggedIn: new Date().valueOf() });
+            } else {
+                user = await dbHelper.create('user', {
+                    email,
+                    name,
+                    googleId,
+                    role: UserRole.GUEST,
+                    createdAt: new Date().valueOf(),
+                    lastLoggedIn: new Date().valueOf()
+                });
+            }
+        } else {
+            await dbHelper.updateOne('user', { googleId }, { lastLoggedIn: new Date().valueOf() });
         }
         
         const accessToken = jwtHelper.generateAccessToken(user);
@@ -199,7 +214,6 @@ const userModule = {
     /**
      * Logs in or registers a user via Facebook OAuth.
      * @param {Object} dbHelper - The database helper for database operations.
-     * @param {Object} session - The session object for the current user.
      * @param {Object} data - The data object containing the Facebook token.
      * @returns {Object} Response data with status, error, message, and userId on success.
      */
@@ -230,13 +244,22 @@ const userModule = {
             let user = await dbHelper.findOne('user', { facebookId });
 
             if (!user) {
-                user = await dbHelper.create('user', {
-                    facebookId,
-                    email,
-                    name,
-                    role: UserRole.GUEST,
-                    createdAt: new Date().valueOf()
-                });
+                user = await dbHelper.findOne('user', { email });
+
+                if (user) {
+                    await dbHelper.updateOne('user', { email }, { facebookId, lastLoggedIn: new Date().valueOf() });
+                } else {
+                    user = await dbHelper.create('user', {
+                        facebookId,
+                        email,
+                        name,
+                        role: UserRole.GUEST,
+                        createdAt: new Date().valueOf(),
+                        lastLoggedIn: new Date().valueOf()
+                    });
+                }
+            } else {
+                await dbHelper.updateOne('user', { facebookId }, { lastLoggedIn: new Date().valueOf() });
             }
 
             const accessToken = jwtHelper.generateAccessToken(user);
@@ -269,6 +292,7 @@ const userModule = {
             error: 'Error on resetting password'
         };
         try {
+            email = email.trim();
             if (!isPresent(email) || !isPresent(newGeneratedPassword)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
@@ -311,15 +335,17 @@ const userModule = {
     /**
      * Sends a password reset link to the user's email if it exists in the system.
      * @param {Object} dbHelper - The database helper for database operations.
-     * @param {string} email - The email address of the user for whom the password reset link is requested.
+     * @param {Object} data - The data object containing the email field.
      * @returns {Object} Response data with status, error, and message. If the user exists, a reset token is also included.
      */
-    forgotPassword: async (dbHelper, email) => {
+    forgotPassword: async (dbHelper, data) => {
+        let { email } = data;
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
             error: 'Error on sending password reset link'
         };
         try {
+            email = email.trim();
             if (!isPresent(email)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
@@ -347,23 +373,11 @@ const userModule = {
 
             responseData.status = Status.OK;
             responseData.error = null;
-            responseData.message = 'Password reset link sent successfully';
-            responseData.resetToken = resetToken; 
+            responseData.message = 'Password reset link sent successfully'; 
         } catch (error) {
             console.error('Error on sending password reset link:', error);
         }
         return responseData;
-    },
-    generateValidPassword: () => {
-        const minLength = 6;
-        const maxLength = 14;
-        const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let password = '';
-        for (let i = 0; i < length; i++) {
-            password += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        return password;
     }
 };
 
@@ -385,30 +399,8 @@ function isValidPassword(password) {
     return password.length >= minLength && password.length <= maxLength;
 }
 
-function isValidPhilippineMobileNumber(number) {
-    const philippineMobileNumberPattern = /^(\+63|0)9\d{9}$/;
-    if (philippineMobileNumberPattern.test(number)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 function isPresent(value) {
     return value !== null && value !== undefined && value.trim().length > 0;
-}
-
-function convertToPlus639Format(number) {
-    const philippineMobileNumberPattern = /^(\+63|0)(9\d{9})$/;
-
-    const match = number.match(philippineMobileNumberPattern);
-
-    if (match) {
-        const mobileNumberPart = match[2];
-        return `+63${mobileNumberPart}`;
-    } else {
-        return null;
-    }
 }
 
 async function hashPassword(password) {

@@ -389,7 +389,7 @@ const facilityModule = {
    * @param {string} facilityType - The type of the facility to be fetched.
    * @returns {Object} Response data with status, error, and facilities on success.
    */
-  getFacilityByType: async (dbHelper, facilityType) => {
+  getFacilitiesByType: async (dbHelper, facilityType) => {
     const responseData = {
       status: Status.INTERNAL_SERVER_ERROR,
       error: 'Error fetching facilities by type',
