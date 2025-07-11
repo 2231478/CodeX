@@ -16,11 +16,17 @@ const specialServiceModule = {
     };
 
     try {
-      const { name, price, unit } = data;
+      let { name, price, unit } = data;
 
-      if (!isPresent(name) || !isPresent(price)) {
+      if (!isPresent(name) || !isPresent(price) || !isPresent(unit)) {
         responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Missing required fields (name, price)';
+        responseData.error = 'Missing required fields (name, price, unit)';
+        return responseData;
+      }
+
+      if (!isValidPrice(price)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid price value';
         return responseData;
       }
 
@@ -35,6 +41,10 @@ const specialServiceModule = {
         responseData.error = 'Only CRMS team and Superintendent can add a special service';
         return responseData;
       }
+
+      name = name.trim();
+      price = String(price).trim();
+      unit = unit.trim();
 
       const existing = await dbHelper.findOne('specialservice', {
             name,
@@ -173,16 +183,29 @@ const specialServiceModule = {
         }
   
         const updateData = {};
-        if (isPresent(data.name)) updateData.name = data.name;
+        if (isPresent(data.name)) updateData.name = data.name.trim();
         if (isPresent(data.price)) {
         if (!isValidPrice(data.price)) {
           responseData.status = Status.BAD_REQUEST;
           responseData.error = 'Invalid price value';
           return responseData;
         }
-        updateData.price = data.price;
+        updateData.price = String(data.price).trim();
         }
-        if (isPresent(data.unit)) updateData.unit = data.unit;
+        if (isPresent(data.unit)) updateData.unit = data.unit.trim();
+
+        const existing = await dbHelper.findOne('specialservice', {
+            _id: { $ne: id },
+            name: updateData.name || specialService.name,
+            price: updateData.price || specialService.price,
+            unit: updateData.unit || specialService.unit
+        });
+
+        if (existing) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Another special service with the same details already exists';
+            return responseData;
+        }
   
         await dbHelper.updateOne('specialservice', { _id: id }, { $set: updateData });
       
@@ -250,6 +273,16 @@ function isPresent(value) {
 }
 
 function isValidPrice(price) {
-  return !isNaN(Number(price)) && Number(price) >= 0;
+  if (isNaN(Number(price)) || Number(price) < 0) {
+    return false;
+  }
+  const priceString = String(price);
+  if (priceString.includes('.')) {
+    const decimalPart = priceString.split('.')[1];
+    if (decimalPart.length > 2) {
+      return false;
+    }
+  }
+  return true;
 }
 

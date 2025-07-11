@@ -24,7 +24,7 @@ const facilityModule = {
       try {
           const { name, facilityType, capacity, ratePerPerson, status } = data;
 
-          if (!isPresent(name) || !isPresent(facilityType) || !isPresent(capacity) || !file) {
+          if (!isPresent(name) || !isPresent(facilityType) || !isPresent(capacity) || !isPresent(ratePerPerson) || !file) {
             responseData.status = Status.BAD_REQUEST;
             responseData.error = 'Missing required fields';
             return responseData;
@@ -42,9 +42,10 @@ const facilityModule = {
             return responseData;
           }
 
-          if (!image) {
+          const imageError = isValidImage(file);
+          if (imageError) {
             responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing image';
+            responseData.error = imageError;
             return responseData;
           }
 
@@ -96,8 +97,8 @@ const facilityModule = {
           }
           
           const existing = await dbHelper.findOne('facility', {
-            name,
-            facilityType,
+            name: name.trim(),
+            facilityType: facilityType.trim(),
           });
 
           if (existing) {
@@ -107,8 +108,8 @@ const facilityModule = {
           }
 
           const facilityData = {
-            name,
-            facilityType,
+            name: name.trim(),
+            facilityType: facilityType.trim(),
             capacity: parseInt(capacity, 10),
             ratePerPerson: parseFloat(ratePerPerson) || 0,
             status: status || FacilityStatus.AVAILABLE,
@@ -233,14 +234,14 @@ const facilityModule = {
       }
 
       const updateData = {};
-      if (isPresent(data.name)) updateData.name = data.name;
+      if (isPresent(data.name)) updateData.name = data.name.trim();
       if (isPresent(data.facilityType)) {
         if (!isValidFacilityType(data.facilityType)) {
           responseData.status = Status.BAD_REQUEST;
           responseData.error = 'Invalid facility type';
           return responseData;
         }
-        updateData.facilityType = data.facilityType;
+        updateData.facilityType = data.facilityType.trim();
       }
       if (isPresent(data.capacity)) {
         if (!isValidCapacity(data.capacity)) {
@@ -268,6 +269,13 @@ const facilityModule = {
       }
 
       if (file) {
+        const imageError = isValidImage(file);
+        if (imageError) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = imageError;
+          return responseData;
+        }
+        
         try {
           const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
           const blob = bucket.file(filename);
@@ -284,6 +292,18 @@ const facilityModule = {
         } catch (err) {
           responseData.status = Status.INTERNAL_SERVER_ERROR;
           responseData.error = 'Image upload failed: ' + err.message;
+          return responseData;
+        }
+      }
+
+      if (updateData.name) {
+        const existingFacility = await dbHelper.findOne('facility', {
+          name: updateData.name,
+          _id: { $ne: id }
+        });
+        if (existingFacility) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Facility with this name already exists';
           return responseData;
         }
       }
@@ -382,4 +402,17 @@ function isValidCapacity(cap) {
 }
 function isValidRate(rate) {
   return !rate || (!isNaN(parseFloat(rate)) && parseFloat(rate) >= 0);
+}
+
+function isValidImage(file) {
+  if (!file) return 'Missing image';
+  const allowedTypes = ['image/jpeg', 'image/png'];
+  if (!allowedTypes.includes(file.mimetype)) {
+    return 'Invalid image type. Only JPEG and PNG are allowed';
+  }
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    return 'Image size exceeds the 5MB limit';
+  }
+  return null;
 }
