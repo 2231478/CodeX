@@ -4,7 +4,7 @@ import specificStyles from './SignUpForm.module.css';
 import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash} from 'react-icons/fa';
 import Terms from '../Terms/Terms';
 
-function SignUpForm() {
+function SignUpForm({ onRegistrationSuccess }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -14,20 +14,51 @@ function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
+      setLoading(false);
       return;
     }
     if (!agreedToTerms) {
-      alert("You must agree to the Terms and Privacy Policy.");
+      setError("You must agree to the Terms and Privacy Policy.");
+      setLoading(false);
       return;
     }
-    console.log('Sign Up attempt:', { email, firstName, lastName, password, agreedToTerms });
-    // Add actual signup logic 
+
+    try {
+      const response = await fetch('/api/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, firstName, lastName, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Registration successful:', data);
+        if (onRegistrationSuccess) {
+          onRegistrationSuccess();
+        }
+      } else {
+        console.error('Registration failed:', data.error);
+        setError(data.error || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Network error or unexpected issue:', err);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -135,8 +166,10 @@ function SignUpForm() {
             </span>
           </label>
         </div>
-        <button type="submit" className={`${commonStyles.formButton} ${specificStyles.signUpFormButton}`}>Sign Up</button>
+        <button type="submit" className={`${commonStyles.formButton} ${specificStyles.signUpFormButton}`} disabled={loading}>Sign Up</button>
       </form>
+      {loading && <p>Signing up...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <p className={`${commonStyles.orSeparator} ${specificStyles.signUpOrSeparator}`}>or</p> 
       <div className={commonStyles.socialLogin}>
         <button className={commonStyles.socialButton} aria-label="Sign up with Facebook">

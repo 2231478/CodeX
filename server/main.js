@@ -149,7 +149,7 @@ const processPostAPI = async (req, res) => {
                     // return res.status(responseData.status).json(responseData);
                     let responseData = await userModule.register(dbHelper, data);
                     if (responseData.status === Status.OK) {
-                        await profileModule.createProfilec(dbHelper, responseData.userId);
+                        await profileModule.createProfile(dbHelper, responseData.userId);
                     }
                     return res.status(responseData.status).json(responseData);
                 }

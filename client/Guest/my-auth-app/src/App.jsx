@@ -26,7 +26,7 @@ function App() {
           {formState === 'login' && (
             <LoginForm onForgotPassword={() => toggleForm('forgot-password')} />
           )}
-          {formState === 'signup' && <SignUpForm />}
+          {formState === 'signup' && <SignUpForm onRegistrationSuccess={() => toggleForm('login')} />}
           {formState === 'forgot-password' && (
             <ForgotPasswordForm onBackToLogin={() => toggleForm('login')} />
           )}
