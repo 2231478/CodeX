@@ -340,6 +340,7 @@ const userModule = {
      */
     forgotPassword: async (dbHelper, data) => {
         let { email } = data;
+        email = email.trim();
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
             error: 'Error on sending password reset link'

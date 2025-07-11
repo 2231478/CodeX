@@ -43,7 +43,7 @@ const specialServiceModule = {
       }
 
       name = name.trim();
-      price = String(price).trim();
+      price = parseFloat(price);
       unit = unit.trim();
 
       const existing = await dbHelper.findOne('specialservice', {
@@ -190,7 +190,7 @@ const specialServiceModule = {
           responseData.error = 'Invalid price value';
           return responseData;
         }
-        updateData.price = String(data.price).trim();
+        updateData.price = parseFloat(data.price);
         }
         if (isPresent(data.unit)) updateData.unit = data.unit.trim();
 

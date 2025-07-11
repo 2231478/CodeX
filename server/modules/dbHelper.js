@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import xss from 'xss';
 import { UserRole, Category, GuestType, ReservationStatus, FacilityType, FacilityStatus, ServiceType } from '../constants.js';
 
 const dbHelper = {
@@ -16,6 +17,13 @@ const dbHelper = {
                 resetTokenExpiry: { type: Date, required: false }
             });
 
+            UserSchema.pre('save', function(next) {
+                if (this.name) {
+                    this.name = xss(this.name);
+                }
+                next();
+            });
+
             const ProfileSchema = new mongoose.Schema({
                 about: { type: String, required: false }, 
                 address: { type: String, required: false },
@@ -24,9 +32,31 @@ const dbHelper = {
                 instagramProfile: { type: String, required: false }, 
                 linkedInProfile: { type: String, required: false }, 
                 profilePic: { type: String, required: true }, 
-                createdProfileAt: { type: String, default: Date.now }, 
-                updatedProfileAt: { type: String, required: false }, 
+                createdProfileAt: { type: Date, default: Date.now }, 
+                updatedProfileAt: { type: Date, required: false }, 
                 userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }
+            });
+
+            ProfileSchema.pre('save', function(next) {
+                if (this.about) {
+                    this.about = xss(this.about);
+                }
+                if (this.address) {
+                    this.address = xss(this.address);
+                }
+                if (this.xProfile) {
+                    this.xProfile = xss(this.xProfile);
+                }
+                if (this.fbProfile) {
+                    this.fbProfile = xss(this.fbProfile);
+                }
+                if (this.instagramProfile) {
+                    this.instagramProfile = xss(this.instagramProfile);
+                }
+                if (this.linkedInProfile) {
+                    this.linkedInProfile = xss(this.linkedInProfile);
+                }
+                next();
             });
 
             const ReservationSchema = new mongoose.Schema({
@@ -57,6 +87,22 @@ const dbHelper = {
                 userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }
             });
 
+            ReservationSchema.pre('save', function(next) {
+                if (this.guestName) {
+                    this.guestName = xss(this.guestName);
+                }
+                if (this.homeAddress) {
+                    this.homeAddress = xss(this.homeAddress);
+                }
+                if (this.officeAddress) {
+                    this.officeAddress = xss(this.officeAddress);
+                }
+                if (this.otherRequests) {
+                    this.otherRequests = xss(this.otherRequests);
+                }
+                next();
+            });
+
             const FacilitySchema = new mongoose.Schema({
                 name: { type: String, required: true, unique: true },
                 facilityType: { type: String, enum: Object.values(FacilityType), required: true },
@@ -66,12 +112,29 @@ const dbHelper = {
                 image: { type: String, required: true},
                 createdAt: { type: Date, default: Date.now }
                 });
+
+            FacilitySchema.pre('save', function(next) {
+                if (this.name) {
+                    this.name = xss(this.name);
+                }
+                next();
+            });
             
             const SpecialServiceSchema = new mongoose.Schema({
                 name: { type: String, required: true },
-                price: { type: String, required: true }, 
+                price: { type: Number, required: true }, 
                 unit: { type: String, required: false }, 
                 createdAt: { type: Date, default: Date.now }
+            });
+
+            SpecialServiceSchema.pre('save', function(next) {
+                if (this.name) {
+                    this.name = xss(this.name);
+                }
+                if (this.unit) {
+                    this.unit = xss(this.unit);
+                }
+                next();
             });
 
             const NotificationSchema = new mongoose.Schema({
@@ -81,6 +144,16 @@ const dbHelper = {
                 createdAt: { type: Date, default: Date.now },
                 userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
                 reservationId: { type: mongoose.Schema.Types.ObjectId, ref: 'reservation', required: true }
+            });
+
+            NotificationSchema.pre('save', function(next) {
+                if (this.title) {
+                    this.title = xss(this.title);
+                }
+                if (this.message) {
+                    this.message = xss(this.message);
+                }
+                next();
             });
 
             mongoose.model('user', UserSchema);

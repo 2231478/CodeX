@@ -23,6 +23,8 @@ const facilityModule = {
 
       try {
           const { name, facilityType, capacity, ratePerPerson, status } = data;
+          name = name.trim();
+          facilityType = facilityType.trim();
 
           if (!isPresent(name) || !isPresent(facilityType) || !isPresent(capacity) || !isPresent(ratePerPerson) || !file) {
             responseData.status = Status.BAD_REQUEST;
@@ -427,6 +429,7 @@ export default facilityModule;
 function isPresent(value) {
   return value !== null && value !== undefined && String(value).trim().length > 0;
 }
+
 function isValidFacilityType(type) {
   return Object.values(FacilityType).includes(type);
 }

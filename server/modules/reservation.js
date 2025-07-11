@@ -14,12 +14,29 @@ const reservationModule = {
     };
 
     try {
-      const {
+      let {
         guestName, homeAddress, officeAddress, category, guestType,
         telephone, officeTelephone, numberOfAdults, numberOfChildren, numberOfPwds,
         emergencyContact, dateOfArrival, dateOfDeparture, facility, 
         serviceType, timeOfArrival, otherRequests
       } = data;
+
+      guestName = guestName.trim();
+      homeAddress = homeAddress.trim();
+      officeAddress = officeAddress.trim();
+      category = category.trim();
+      guestType = guestType.trim();
+      telephone = telephone.trim();
+      officeTelephone = officeTelephone.trim();
+      numberOfAdults = numberOfAdults.trim();
+      numberOfChildren = numberOfChildren.trim();
+      numberOfPwds = numberOfPwds.trim();
+      emergencyContact = emergencyContact.trim();
+      dateOfArrival = dateOfArrival.trim();
+      dateOfDeparture = dateOfDeparture.trim();
+      timeOfArrival = timeOfArrival.trim();
+      otherRequests = otherRequests.trim();
+      serviceType = serviceType.trim();
 
       if (
         !isPresent(guestName) ||
@@ -291,7 +308,7 @@ function isValidDateRange(dateOfArrival, dateOfDeparture) {
     tomorrow.setDate(today.getDate() + 1);
 
     // Optional: add max window, eg, 6 months from today
-    // const maxAdvance = new Date(today); maxAdvance.setMonth(today.getMonth() + 6);
+    const maxAdvance = new Date(today); maxAdvance.setMonth(today.getMonth() + 6);
 
     if (isNaN(arrival.getTime()) || isNaN(departure.getTime())) return false;
     if (arrival < tomorrow) return false;        
