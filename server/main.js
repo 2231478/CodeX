@@ -198,11 +198,12 @@ const processPostAPI = async (req, res) => {
                     let responseData = await userModule.changePassword(dbHelper, req.session, data);
                     return res.status(responseData.status).json(responseData);
                 }
-                case 'forgot-password': {
-                    const responseData = await userModule.forgotPassword(dbHelper, data.email);
-                    if (responseData.status === Status.OK && responseData.resetToken) {
-                        await emailModule.sendPasswordResetLink(data.email, responseData.resetToken);
-                    }
+                case 'send-password-reset-verification-code': {
+                    const responseData = await userModule.sendPasswordResetVerificationCode(dbHelper, emailModule, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'reset-password': {
+                    const responseData = await userModule.resetPassword(dbHelper, data);
                     return res.status(responseData.status).json(responseData);
                 }
                 // case 'reset-password': {

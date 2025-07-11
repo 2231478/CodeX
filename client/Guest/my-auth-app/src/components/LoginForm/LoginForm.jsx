@@ -7,10 +7,42 @@ function LoginForm({ onForgotPassword }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password });
-    // Add login logic 
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/user/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Login successful:', data);
+        // Store accessToken, userId, role (e.g., in localStorage or context)
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userRole', data.role);
+        // Redirect or update UI as needed
+      } else {
+        console.error('Login failed:', data.error);
+        setError(data.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Network error or unexpected issue:', err);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,8 +82,10 @@ function LoginForm({ onForgotPassword }) {
                 Forgot Password?
             </a>
         </div>
-        <button type="submit" className={styles.formButton}>Log In</button>
+        <button type="submit" className={styles.formButton} disabled={loading}>Log In</button>
       </form>
+      {loading && <p>Logging in...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <p className={styles.orSeparator}>or</p>
       <div className={styles.socialLogin}>
         <button className={styles.socialButton} aria-label="Login with Facebook">

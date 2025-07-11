@@ -20,12 +20,14 @@ const userModule = {
             error: 'Error on registering user'
         };
         try {
-            let { email, name, password } = data;
+            let { email, firstName, lastName, password } = data;
             email = email.trim();
-            name = name.trim();
+            firstName = firstName.trim();
+            lastName = lastName.trim();
             if (
                 !isPresent(email) ||
-                !isPresent(name) ||
+                !isPresent(firstName) ||
+                !isPresent(lastName) ||
                 !isPresent(password)
             ) {
                 responseData.status = Status.BAD_REQUEST;
@@ -45,7 +47,7 @@ const userModule = {
                 return responseData;
             }
 
-            if (!isValidName(name)) {
+            if (!isValidName(firstName) || !isValidName(lastName)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Invalid name';
                 return responseData;
@@ -61,7 +63,8 @@ const userModule = {
             try {
                 const userCreated = await dbHelper.create('user', { 
                     email, 
-                    name, 
+                    firstName,
+                    lastName,
                     password: await hashPassword(password), 
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
@@ -173,7 +176,8 @@ const userModule = {
         const payload = ticket.getPayload();
         const googleId = payload.sub;
         const email = payload.email;
-        const name = payload.name;
+        const fullName = payload.name;
+        const [firstName, lastName] = fullName.split(/\s+/, 2);
 
         let user = await dbHelper.findOne('user', { googleId });
         if (!user) {
@@ -183,7 +187,8 @@ const userModule = {
             } else {
                 user = await dbHelper.create('user', {
                     email,
-                    name,
+                    firstName,
+                    lastName,
                     googleId,
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
@@ -239,7 +244,8 @@ const userModule = {
                 return responseData;
             }
 
-            const { id: facebookId, email, name } = fbData;
+            const { id: facebookId, email, name: fullName } = fbData;
+            const [firstName, lastName] = fullName.split(/\s+/, 2);
 
             let user = await dbHelper.findOne('user', { facebookId });
 
@@ -252,7 +258,8 @@ const userModule = {
                     user = await dbHelper.create('user', {
                         facebookId,
                         email,
-                        name,
+                        firstName,
+                        lastName,
                         role: UserRole.GUEST,
                         createdAt: new Date().valueOf(),
                         lastLoggedIn: new Date().valueOf()
@@ -286,14 +293,18 @@ const userModule = {
      * @param {string} newGeneratedPassword - The new password to set for the user.
      * @returns {Object} Response data with status, error, and message.
      */
-    resetPassword: async (dbHelper, email, newGeneratedPassword) => {
+    resetPassword: async (dbHelper, data) => {
+        let { email, newPassword, verificationCode } = data;
+        email = email.trim();
+        newPassword = newPassword.trim();
+        verificationCode = verificationCode.trim();
+
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
             error: 'Error on resetting password'
         };
         try {
-            email = email.trim();
-            if (!isPresent(email) || !isPresent(newGeneratedPassword)) {
+            if (!isPresent(email) || !isPresent(newPassword) || !isPresent(verificationCode)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
                 return responseData;
@@ -305,7 +316,7 @@ const userModule = {
                 return responseData;
             }
 
-            if (!isValidPassword(newGeneratedPassword)) {
+            if (!isValidPassword(newPassword)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Invalid password';
                 return responseData;
@@ -318,9 +329,21 @@ const userModule = {
                 return responseData;
             }
 
-            const hashedPassword = await hashPassword(newGeneratedPassword);
+            if (user.verificationCode !== verificationCode) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid verification code';
+                return responseData;
+            }
 
-            await dbHelper.updateOne('user', { email }, { password: hashedPassword, updatedAt: new Date().valueOf() });
+            if (Date.now() > user.verificationCodeExpiry) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Verification code has expired';
+                return responseData;
+            }
+
+            const hashedPassword = await hashPassword(newPassword);
+
+            await dbHelper.updateOne('user', { email }, { password: hashedPassword, verificationCode: null, verificationCodeExpiry: null, updatedAt: new Date().valueOf() });
 
             responseData.status = Status.OK;
             responseData.error = null;
@@ -338,15 +361,14 @@ const userModule = {
      * @param {Object} data - The data object containing the email field.
      * @returns {Object} Response data with status, error, and message. If the user exists, a reset token is also included.
      */
-    forgotPassword: async (dbHelper, data) => {
+    sendPasswordResetVerificationCode: async (dbHelper, emailModule, data) => {
         let { email } = data;
         email = email.trim();
         const responseData = {
             status: Status.INTERNAL_SERVER_ERROR,
-            error: 'Error on sending password reset link'
+            error: 'Error on sending password reset verification code'
         };
         try {
-            email = email.trim();
             if (!isPresent(email)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
@@ -363,20 +385,71 @@ const userModule = {
             if (!user) {
                 responseData.status = Status.OK;
                 responseData.error = null;
-                responseData.message = 'Password reset link sent successfully';
+                responseData.message = 'If your email is in our system, a verification code has been sent.';
                 return responseData;
             }
 
-            const resetToken = generateResetToken();
-            const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+            const verificationCode = generateVerificationCode();
+            const verificationCodeExpiry = Date.now() + 600000; // 10 minutes from now
 
-            await dbHelper.updateOne('user', { email }, { resetToken, resetTokenExpiry });
+            await dbHelper.updateOne('user', { email }, { verificationCode, verificationCodeExpiry });
+
+            const emailResponse = await emailModule.sendVerificationCode(email, verificationCode);
+            if (emailResponse.status !== Status.OK) {
+                return emailResponse;
+            }
 
             responseData.status = Status.OK;
             responseData.error = null;
-            responseData.message = 'Password reset link sent successfully'; 
+            responseData.message = 'If your email is in our system, a verification code has been sent.'; 
         } catch (error) {
-            console.error('Error on sending password reset link:', error);
+            console.error('Error on sending password reset verification code:', error);
+        }
+        return responseData;
+    },
+
+    verifyPasswordResetCode: async (dbHelper, data) => {
+        let { email, verificationCode } = data;
+        email = email.trim();
+        verificationCode = verificationCode.trim();
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on verifying password reset code'
+        };
+        try {
+            if (!isPresent(email) || !isPresent(verificationCode)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Missing required fields';
+                return responseData;
+            }
+
+            const user = await dbHelper.findOne('user', { email });
+            if (!user) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'User not found';
+                return responseData;
+            }
+
+            if (user.verificationCode !== verificationCode) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid verification code';
+                return responseData;
+            }
+
+            if (Date.now() > user.verificationCodeExpiry) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Verification code has expired';
+                return responseData;
+            }
+
+            // Clear the verification code and expiry after successful verification
+            await dbHelper.updateOne('user', { email }, { verificationCode: null, verificationCodeExpiry: null });
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'Verification code verified successfully';
+        } catch (error) {
+            console.error('Error on verifying password reset code:', error);
         }
         return responseData;
     }
@@ -410,6 +483,6 @@ async function hashPassword(password) {
     return hashedPassword;
 }
 
-function generateResetToken() {
-    return crypto.randomBytes(20).toString('hex');
+function generateVerificationCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
 }

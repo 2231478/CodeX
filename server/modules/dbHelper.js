@@ -25,8 +25,8 @@ const dbHelper = {
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, required: false },
         lastLoggedIn: { type: Date, required: false },
-        resetToken: { type: String, required: false },
-        resetTokenExpiry: { type: Date, required: false }
+        verificationCode: { type: String, required: false },
+        verificationCodeExpiry: { type: Date, required: false }
       });
 
       const ProfileSchema = new mongoose.Schema({
