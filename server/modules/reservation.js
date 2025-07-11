@@ -245,19 +245,131 @@ const reservationModule = {
         serviceType,
         otherRequests,
         letterOfIntentFile: letterOfIntentUrl,
-        totalEstimatedAmount: total * facilityDoc.ratePerPerson,
+        totalEstimatedAmount: (adults * facilityDoc.ratePerPerson) + ((children + pwds) * facilityDoc.ratePerPerson * 0.80),
         userId: user.userId,
         createdAt: new Date()
       };
 
       const reservation = await dbHelper.create('reservation', reservationData);
 
+      const reservationObject= { ...reservation };
+      delete reservationObject.letterOfIntentUrl;
+      delete reservationObject.__v;
+      delete reservationObject.createdAt;
+      delete reservationObject.userId;
+      if (reservationObject.numberOfGuests) {
+        delete reservationObject.numberOfGuests.adult;
+        delete reservationObject.numberOfGuests.children;
+        delete reservationObject.numberOfGuests.pwds;
+      }
+
       responseData.status = Status.CREATED;
       responseData.error = null;
       responseData.message = 'Reservation submitted successfully';
       responseData.reservationId = reservation._id.toString();
+      responseData.reservation = reservationObject;
     } catch (error) {
       console.error('Error creating reservation:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  /**
+   * Fetches all reservations for a given user.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {Object} user - The user object containing the user ID and role.
+   * @returns {Object} Response data with status, error, and reservations on success.
+   */
+  getReservationByUserId: async (dbHelper, user) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching reservations'
+    };
+    try {
+      if (!user || !user.userId) {
+        responseData.status = Status.UNAUTHORIZED;
+        responseData.error = 'User not logged in';
+        return responseData;
+      }
+      const reservations = await dbHelper.find('reservation', { userId: user.userId });
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.reservations = reservations;
+    } catch (error) {
+      console.error('Error fetching reservations by user ID:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  /**
+   * Cancels a reservation.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} reservationId - The ID of the reservation to cancel.
+   * @param {Object} user - The user object containing the user ID and role.
+   * @returns {Object} Response data with status, error, message, and the updated reservation on success.
+   */
+  cancelBooking: async (dbHelper, reservationId, user) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error cancelling reservation'
+    };
+    try {
+      if (!reservationId) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Reservation ID is required';
+        return responseData;
+      }
+      if (!user || !user.userId) {
+        responseData.status = Status.UNAUTHORIZED;
+        responseData.error = 'User not logged in';
+        return responseData;
+      }
+
+      const reservation = await dbHelper.findOne('reservation', { _id: reservationId });
+
+      if (!reservation) {
+        responseData.status = Status.NOT_FOUND;
+        responseData.error = 'Reservation not found';
+        return responseData;
+      }
+
+      if (reservation.userId.toString() !== user.userId.toString()) {
+        responseData.status = Status.FORBIDDEN;
+        responseData.error = 'You are not authorized to cancel this reservation';
+        return responseData;
+      }
+
+      const arrivalDate = new Date(reservation.dateOfArrival);
+      const now = new Date();
+      const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
+
+      if (arrivalDate.getTime() - now.getTime() < twentyFourHoursInMs) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Cannot cancel reservation within 24 hours of arrival.';
+        return responseData;
+      }
+
+      if (reservation.status === ReservationStatus.CANCELLED) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Reservation is already cancelled';
+        return responseData;
+      }
+
+      const updatedReservation = await dbHelper.findByIdAndUpdate(
+        'reservation',
+        reservationId,
+        { status: ReservationStatus.CANCELLED, cancelledAt: new Date() },
+        { new: true }
+      );
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.message = 'Reservation cancelled successfully';
+      responseData.reservation = updatedReservation;
+    } catch (error) {
+      console.error('Error cancelling reservation:', error);
       responseData.error = error.message;
     }
     return responseData;

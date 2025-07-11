@@ -111,6 +111,15 @@ const processGetAPI = async (req, res) => {
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
+          case 'reservation':
+            switch (action) {
+                case 'get-reservation-by-user-id': {
+                    let responseData = await reservationModule.getReservationByUserId(dbHelper, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
+                default:
+                    return res.status(404).json({ error: 'Unknown action' });
+            }
         default:
             return res.status(404).json({ error: 'Unknown module' });
     }
@@ -213,6 +222,10 @@ const processPostAPI = async (req, res) => {
                     let responseData = await reservationModule.addReservation(dbHelper, data, req.file, req.user);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'cancel-booking': {
+                    let responseData = await reservationModule.cancelBooking(dbHelper, id, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
@@ -274,7 +287,7 @@ function isProtected(module, action) {
   const protectedEndpoints = {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
-    reservation: ['create-reservation'],
+    reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
     'special-service': ['create-special-service', 'update-special-service', 'delete-special-service']
   };
