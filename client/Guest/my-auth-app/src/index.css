@@ -1,21 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 body {
   margin: 0;
-  font-family: Arial, sans-serif; /* Or your preferred font */
+  font-family: 'Montserrat', sans-serif;; 
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   width: 100%;
-  background-color: #f0f2f5; /* A light background color */
-  overflow: hidden; /* Prevent scroll if content is centered */
+  background-color: #f0f2f5; 
+  overflow: hidden; 
 }
 
-#root { /* If your app is mounted on a div with id="root" in index.html */
+#root { 
   width: 100%;
   height: 100%;
 }
 
-/* Common button styles */
 button {
   cursor: pointer;
   border: none;
