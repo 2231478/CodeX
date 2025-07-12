@@ -26,7 +26,6 @@ const emailModule = {
             
             try {
                 const info = await transporter.sendMail(mailOptions);
-                console.log('Email sent: ' + info.response);
                 
                 responseData.status = Status.OK;
                 responseData.error = null;

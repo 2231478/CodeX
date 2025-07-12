@@ -7,7 +7,7 @@ import { createClient } from 'redis';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
-
+import 'dotenv/config';
 import dbHelper from './modules/dbHelper.js';
 import captchaHelper from './modules/captchaHelper.js';
 import emailModule from './modules/email.js';
@@ -207,18 +207,6 @@ const processPostAPI = async (req, res) => {
                     const responseData = await userModule.resetPassword(dbHelper, data);
                     return res.status(responseData.status).json(responseData);
                 }
-                // case 'reset-password': {
-                //     let responseData = captchaHelper.verifyCaptcha(data.captcha, req.session);
-                //     let newGeneratedPassword = userModule.generateValidPassword();
-                //     if (responseData.status === Status.OK) {
-                //         responseData = await userModule.resetPassword(dbHelper, data.email, newGeneratedPassword);
-                //     }
-                //     if (responseData.status === Status.OK) {
-                //         await emailModule.sendResetPassword(data.email, newGeneratedPassword);
-                //     }
-                //     captchaHelper.resetCaptcha(req.session);
-                //     return res.status(responseData.status).json(responseData);
-                // }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
