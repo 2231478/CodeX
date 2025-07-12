@@ -1,0 +1,93 @@
+.headerContainer {
+  background-color: #2E4B2F;
+  color: white;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerLogo {
+  width: 50px;
+  height: auto;
+}
+
+.headerLogoText {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: white;
+  white-space: nowrap;
+}
+
+.navbarNav {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.navList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 30px;
+}
+
+.navLink {
+  color: white;
+  text-decoration: none;
+  font-size: 1em;
+  font-weight: 500;
+  padding: 5px 0;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+
+.navLink:hover {
+  color: #4CAF50;
+  border-bottom: 2px solid #4CAF50;
+}
+
+.reserveNowButton {
+  background-color: #F5F5F5;
+  color: #2E4B2F;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 25px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.reserveNowButton:hover {
+  background-color: #E0E0E0;
+  color: #1E3C24;
+}
+
+@media (max-width: 992px) {
+  .navbarNav {
+    display: none;
+  }
+
+  .headerContainer {
+    justify-content: space-around;
+  }
+}
+
+@media (max-width: 576px) {
+  .headerLogoText {
+    display: none;
+  }
+}
