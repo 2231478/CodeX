@@ -1,0 +1,95 @@
+.heroSection {
+  min-height: calc(100vh - 70px);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.heroContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 40px;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+.heroHeadline {
+  font-size: 5em;
+  font-weight: bold;
+  line-height: 1.1;
+  margin: 0;
+  flex: 1;
+  min-width: 300px;
+  text-align: left;
+}
+
+.heroTextContainer {
+  flex: 1;
+  min-width: 300px;
+  text-align: left;
+}
+
+.heroDescription {
+  font-size: 1.2em;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.heroReserveButton {
+  background-color: #F5F5F5;
+  color: #2E4B2F;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 40px;
+  font-size: 1.2em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.heroReserveButton:hover {
+  background-color: #E0E0E0;
+  color: #1E3C24;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 992px) {
+  .heroContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroHeadline {
+    font-size: 4em;
+    text-align: center;
+  }
+
+  .heroTextContainer {
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroHeadline {
+    font-size: 3em;
+  }
+
+  .heroDescription {
+    font-size: 1em;
+  }
+
+  .heroReserveButton {
+    padding: 12px 30px;
+    font-size: 1.1em;
+  }
+}

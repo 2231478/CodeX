@@ -1,0 +1,14 @@
+.servicesSection {
+  padding: 60px 40px;
+  background-color: #EFEFEF; 
+  text-align: center;
+  color: #333;
+}
+
+.sectionTitle {
+  font-size: 3em;
+  font-weight: bold;
+  margin-bottom: 40px;
+  color: #2E4B2F;
+  letter-spacing: 2px;
+}
