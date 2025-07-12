@@ -5,8 +5,6 @@ import fetch from 'node-fetch';
 import jwtHelper from './jwtHelper.js';
 import crypto from 'crypto';
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const userModule = {
     /**
      * Registers a new user.
@@ -168,9 +166,21 @@ const userModule = {
         return responseData;
         }
 
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+
+        const tokenResponse = await client.getToken({
+            code: data.token,
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET,
+            redirect_uri: 'postmessage',
+            grant_type: 'authorization_code'
+        });
+
+        const idToken = tokenResponse.tokens.id_token;
+
         const ticket = await client.verifyIdToken({
-        idToken: data.token,
-        audience: process.env.GOOGLE_CLIENT_ID
+            idToken: idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
         });
 
         const payload = ticket.getPayload();
@@ -234,6 +244,8 @@ const userModule = {
                 responseData.error = 'Missing Facebook token';
                 return responseData;
             }
+
+            console.log('Received Facebook token on server:', data.token);
 
             const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${data.token}`);
             const fbData = await fbRes.json();

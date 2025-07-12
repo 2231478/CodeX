@@ -19,14 +19,15 @@ import facilityModule from './modules/facility.js';
 import specialServiceModule from './modules/specialService.js';
 import { Status } from './constants.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 const port = process.env.PORT || 3000;
 const secretKey = process.env.SESSION_KEY;
 const dbConnectionString = process.env.DB_CONN;
 const upload = multer({ storage: multer.memoryStorage() });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const __clientPath = path.join(__dirname, '../client');
 
 dbHelper.connect(dbConnectionString);

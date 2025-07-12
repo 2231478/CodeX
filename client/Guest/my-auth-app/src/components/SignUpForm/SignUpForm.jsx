@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import commonStyles from '../AuthFormContainer/AuthFormContainer.module.css';
-import specificStyles from './SignUpForm.module.css'; 
-import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash} from 'react-icons/fa';
+import specificStyles from './SignUpForm.module.css';
+import { FaFacebook, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useFacebookLogin } from '@kazion/react-facebook-login';
 import Terms from '../Terms/Terms';
 
 function SignUpForm({ onRegistrationSuccess }) {
@@ -16,6 +18,92 @@ function SignUpForm({ onRegistrationSuccess }) {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [facebookLoading, setFacebookLoading] = useState(false);
+  const [facebookError, setFacebookError] = useState(null);
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/user/google-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: codeResponse.code }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log('Google login successful:', data);
+          // Since google-login also handles registration, we can call onRegistrationSuccess
+          if (onRegistrationSuccess) {
+            onRegistrationSuccess();
+          }
+        } else {
+          console.error('Google login failed:', data.error);
+          setError(data.error || 'Google login failed. Please try again.');
+        }
+      } catch (err) {
+        console.error('Network error or unexpected issue:', err);
+        setError('An unexpected error occurred. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google login failed. Please try again.');
+    },
+    flow: 'auth-code',
+  });
+
+  const facebookLogin = useFacebookLogin({
+    scope: 'public_profile,email',
+    onSuccess: async (response) => {
+      setFacebookLoading(true);
+      setFacebookError(null);
+      try {
+        const accessToken = response.authResponse.accessToken;
+        const apiRes = await fetch('/api/user/facebook-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: accessToken }),
+        });
+        const data = await apiRes.json();
+        if (apiRes.ok) {
+          console.log('Facebook login successful:', data);
+          if (onRegistrationSuccess) {
+            onRegistrationSuccess();
+          }
+        } else {
+          setFacebookError(data.error || 'Facebook login failed. Please try again.');
+        }
+      } catch (err) {
+        setFacebookError('An unexpected error occurred during Facebook login.');
+      } finally {
+        setFacebookLoading(false);
+      }
+    },
+    onFailure: (err) => {
+      console.error('FB login error:', err);
+      setFacebookError('Facebook login cancelled or failed.');
+      setFacebookLoading(false);
+    },
+  });
+
+  const handleFacebookLogin = async () => {
+    setFacebookLoading(true);
+    setFacebookError(null);
+    try {
+      await facebookLogin();
+    } catch (err) {
+      console.error('Network error:', err);
+      setFacebookError('An unexpected error occurred. Please try again later.');
+      setFacebookLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +116,7 @@ function SignUpForm({ onRegistrationSuccess }) {
       return;
     }
     if (!agreedToTerms) {
-      setError("You must agree to the Terms and Privacy Policy.");
+      setError('You must agree to the Terms and Privacy Policy.');
       setLoading(false);
       return;
     }
@@ -96,7 +184,7 @@ function SignUpForm({ onRegistrationSuccess }) {
             style={{ marginBottom: '0', flex: 1 }}
           />
         </div>
-        <div style={{ position: 'relative', marginBottom: '15px', width: '100%' }}> 
+        <div style={{ position: 'relative', marginBottom: '15px', width: '100%' }}>
           <input
             type={showPassword ? 'text' : 'password'}
             placeholder="Password"
@@ -114,7 +202,7 @@ function SignUpForm({ onRegistrationSuccess }) {
               transform: 'translateY(-50%)',
               cursor: 'pointer',
               color: '#666',
-              fontSize: '1.1em'
+              fontSize: '1.1em',
             }}
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -140,7 +228,7 @@ function SignUpForm({ onRegistrationSuccess }) {
               transform: 'translateY(-50%)',
               cursor: 'pointer',
               color: '#666',
-              fontSize: '1.1em'
+              fontSize: '1.1em',
             }}
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
@@ -166,16 +254,25 @@ function SignUpForm({ onRegistrationSuccess }) {
             </span>
           </label>
         </div>
-        <button type="submit" className={`${commonStyles.formButton} ${specificStyles.signUpFormButton}`} disabled={loading}>Sign Up</button>
+        <button type="submit" className={`${commonStyles.formButton} ${specificStyles.signUpFormButton}`} disabled={loading}>
+          Sign Up
+        </button>
       </form>
       {loading && <p>Signing up...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <p className={`${commonStyles.orSeparator} ${specificStyles.signUpOrSeparator}`}>or</p> 
+      {facebookLoading && <p>Signing up with Facebook...</p>}
+      {facebookError && <p style={{ color: 'red' }}>{facebookError}</p>}
+      <p className={`${commonStyles.orSeparator} ${specificStyles.signUpOrSeparator}`}>or</p>
       <div className={commonStyles.socialLogin}>
-        <button className={commonStyles.socialButton} aria-label="Sign up with Facebook">
-          <FaFacebookF style={{ color: '#1877F2' }} />
+        <button
+          onClick={handleFacebookLogin}
+          className={commonStyles.socialButton}
+          aria-label="Sign up with Facebook"
+          disabled={facebookLoading}
+        >
+          <FaFacebook style={{ color: '#1877F2' }} />
         </button>
-        <button className={commonStyles.socialButton} aria-label="Sign up with Google">
+        <button onClick={() => handleGoogleLogin()} className={commonStyles.socialButton} aria-label="Sign up with Google">
           <FaGoogle style={{ color: '#DB4437' }} />
         </button>
       </div>
