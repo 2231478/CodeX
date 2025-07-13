@@ -17,6 +17,7 @@ import profileModule from './modules/profile.js';
 import reservationModule from './modules/reservation.js';
 import facilityModule from './modules/facility.js';
 import specialServiceModule from './modules/specialService.js';
+import dashboardModule from './modules/dashboard.js';
 import { Status } from './constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,6 +126,19 @@ const processGetAPI = async (req, res) => {
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
+          case 'dashboard':
+                switch (action) {
+                  case 'get-todays-reservations-count': {
+                      let responseData = await dashboardModule.getTodaysReservationCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
+                  case 'get-monthly-check-ins-count': {
+                      let responseData = await dashboardModule.getMonthlyCheckInsCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
+                  default:
+                      return res.status(404).json({ error: 'Unknown action' });
+                }
         default:
             return res.status(404).json({ error: 'Unknown module' });
     }
@@ -283,7 +297,8 @@ function isProtected(module, action) {
     profile: ['update', 'uploadPicture'],
     reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
-    'special-service': ['create-special-service', 'update-special-service', 'delete-special-service']
+    'special-service': ['create-special-service', 'update-special-service', 'delete-special-service'],
+    dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }
