@@ -1,4 +1,4 @@
-import { Status, UserRole } from '../constants.js';
+import { Status, UserRole, ReservationStatus } from '../constants.js';
 
 const dashboardModule = {
     /**
@@ -56,7 +56,7 @@ const dashboardModule = {
     try {
         if (!user || !user.userId) {
         responseData.status = Status.UNAUTHORIZED;
-        responseData.error = 'Unauthorized: User not logged in.';
+        responseData.error = 'User not logged in.';
         return responseData;
         }
 
@@ -86,6 +86,40 @@ const dashboardModule = {
         responseData.error = error.message;
     }
     return responseData;
+    },
+
+    getConfirmedReservationsCount: async (dbHelper, user) => {
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error fetching confirmed reservations count'
+        };
+
+        try {
+            if (!user || !user.userId) {
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'User not logged in.';
+                return responseData;
+            }
+
+            if (user.userRole === UserRole.GUEST) {
+                responseData.status = Status.FORBIDDEN;
+                responseData.error = 'You are not authorized to perform this action.';
+                return responseData;
+            }
+
+            const confirmedReservations = await dbHelper.find('reservation', {
+                status: ReservationStatus.CONFIRMED
+            });
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'Successfully fetched confirmed reservations count';
+            responseData.count = confirmedReservations.length;
+        } catch (error) {
+            console.error('Error fetching confirmed reservations count:', error);
+            responseData.error = error.message;
+        }
+        return responseData;
     }
 };
 

@@ -136,6 +136,10 @@ const processGetAPI = async (req, res) => {
                       let responseData = await dashboardModule.getMonthlyCheckInsCount(dbHelper, req.user);
                       return res.status(responseData.status).json(responseData);
                   }
+                  case 'get-confirmed-reservations-count': {
+                      let responseData = await dashboardModule.getConfirmedReservationsCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
                   default:
                       return res.status(404).json({ error: 'Unknown action' });
                 }
@@ -298,7 +302,7 @@ function isProtected(module, action) {
     reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
     'special-service': ['create-special-service', 'update-special-service', 'delete-special-service'],
-    dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count']
+    dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count', 'get-confirmed-reservations-count']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }
