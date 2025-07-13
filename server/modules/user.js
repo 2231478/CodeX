@@ -59,10 +59,10 @@ const userModule = {
             }
 
             try {
+                const name = `${firstName} ${lastName}`;
                 const userCreated = await dbHelper.create('user', { 
                     email, 
-                    firstName,
-                    lastName,
+                    name,
                     password: await hashPassword(password), 
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
@@ -186,19 +186,17 @@ const userModule = {
         const payload = ticket.getPayload();
         const googleId = payload.sub;
         const email = payload.email;
-        const fullName = payload.name;
-        const [firstName, lastName] = fullName.split(/\s+/, 2);
+        const name = payload.name;
 
         let user = await dbHelper.findOne('user', { googleId });
         if (!user) {
             user = await dbHelper.findOne('user', { email });
             if (user) {
-                await dbHelper.updateOne('user', { email }, { googleId, lastLoggedIn: new Date().valueOf() });
+                await dbHelper.updateOne('user', { email, name }, { googleId, lastLoggedIn: new Date().valueOf() });
             } else {
                 user = await dbHelper.create('user', {
                     email,
-                    firstName,
-                    lastName,
+                    name,
                     googleId,
                     role: UserRole.GUEST,
                     createdAt: new Date().valueOf(),
@@ -245,8 +243,6 @@ const userModule = {
                 return responseData;
             }
 
-            console.log('Received Facebook token on server:', data.token);
-
             const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${data.token}`);
             const fbData = await fbRes.json();
 
@@ -256,8 +252,7 @@ const userModule = {
                 return responseData;
             }
 
-            const { id: facebookId, email, name: fullName } = fbData;
-            const [firstName, lastName] = fullName.split(/\s+/, 2);
+            const { id: facebookId, email, name } = fbData;
 
             let user = await dbHelper.findOne('user', { facebookId });
 
@@ -265,13 +260,12 @@ const userModule = {
                 user = await dbHelper.findOne('user', { email });
 
                 if (user) {
-                    await dbHelper.updateOne('user', { email }, { facebookId, lastLoggedIn: new Date().valueOf() });
+                    await dbHelper.updateOne('user', { email, name }, { facebookId, lastLoggedIn: new Date().valueOf() });
                 } else {
                     user = await dbHelper.create('user', {
                         facebookId,
                         email,
-                        firstName,
-                        lastName,
+                        name,
                         role: UserRole.GUEST,
                         createdAt: new Date().valueOf(),
                         lastLoggedIn: new Date().valueOf()
@@ -366,7 +360,6 @@ const userModule = {
         return responseData;
     },
 
-    
     /**
      * Sends a password reset link to the user's email if it exists in the system.
      * @param {Object} dbHelper - The database helper for database operations.
