@@ -140,6 +140,22 @@ const processGetAPI = async (req, res) => {
                       let responseData = await dashboardModule.getConfirmedReservationsCount(dbHelper, req.user);
                       return res.status(responseData.status).json(responseData);
                   }
+                  case 'get-pending-reservations-count': {
+                      let responseData = await dashboardModule.getPendingReservationsCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
+                  case 'get-cancelled-reservations-count': {
+                      let responseData = await dashboardModule.getCancelledReservationsCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
+                  case 'get-monthly-check-outs-count': {
+                      let responseData = await dashboardModule.getMonthlyCheckOutsCount(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
+                  case 'get-total-guest-users': {
+                      let responseData = await dashboardModule.getTotalGuestUsers(dbHelper, req.user);
+                      return res.status(responseData.status).json(responseData);
+                  }
                   default:
                       return res.status(404).json({ error: 'Unknown action' });
                 }
@@ -302,7 +318,8 @@ function isProtected(module, action) {
     reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
     'special-service': ['create-special-service', 'update-special-service', 'delete-special-service'],
-    dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count', 'get-confirmed-reservations-count']
+    dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count', 'get-monthly-check-outs-count', 
+                'get-confirmed-reservations-count', 'get-pending-reservations-count', 'get-cancelled-reservations-count', 'get-total-guest-users']
   };
   return protectedEndpoints[module] && protectedEndpoints[module].includes(action);
 }
