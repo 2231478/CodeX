@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react'; 
 import styles from './FAQSection.module.css';
 
 const faqData = [
@@ -35,7 +35,7 @@ const faqData = [
 ];
 
 function FAQSection() {
-  const [openItemId, setOpenItemId] = useState(faqData[0].id); 
+  const [openItemId, setOpenItemId] = useState(faqData[0].id); // First item open by default
 
   const toggleAccordion = (itemId) => {
     setOpenItemId(prevId => prevId === itemId ? null : itemId);
@@ -67,13 +67,14 @@ function AccordionItem({ item, isOpen, toggleAccordion }) {
         <h3 className={styles.questionNumber}>{item.id}.</h3>
         <p className={styles.questionText}>{item.question}</p>
         <span className={`${styles.accordionIcon} ${isOpen ? styles.rotate : ''}`}>
-          &#9660; 
+          &#9660;
         </span>
       </div>
       <div
         ref={contentRef}
         className={styles.accordionContent}
-        style={{ maxHeight: isOpen ? contentRef.current.scrollHeight + 'px' : '0px' }}
+        // CRITICAL IMPROVEMENT: Check if contentRef.current exists before accessing scrollHeight
+        style={{ maxHeight: isOpen && contentRef.current ? contentRef.current.scrollHeight + 'px' : '0px' }}
       >
         <p>{item.answer}</p>
       </div>
