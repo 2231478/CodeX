@@ -15,7 +15,7 @@ function Header({ onReserveNow }) {
           <li className={styles.navItem}><a href="#" className={styles.navLink}>HOME</a></li>
           <li className={styles.navItem}><a href="#history-section" className={styles.navLink}>HISTORY</a></li>
           <li className={styles.navItem}><a href="#services-section" className={styles.navLink}>SERVICES</a></li>
-          <li className={styles.navItem}><a href="#" className={styles.navLink}>FAQS</a></li>
+          <li className={styles.navItem}><a href="#faq-section" className={styles.navLink}>FAQS</a></li>
           <li className={styles.navItem}><a href="#" className={styles.navLink}>CONTACTS</a></li>
         </ul>
       </nav>

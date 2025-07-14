@@ -1,0 +1,143 @@
+.faqSection {
+  background-color: #f5f5f5;
+  padding: 80px 40px;
+  text-align: center;
+  color: #4F3718;
+}
+
+.sectionTitle {
+  font-size: 3em;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #4F3718;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.accordionContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.accordionItem {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.accordionItem.active {
+  background-color: #f5f5f5;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.accordionItem:first-child.active {
+    background-color: #f5f5f5;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  padding: 5px 25px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #4F3718;
+  text-align: left;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.accordionHeader:hover {
+  background-color: #f5f5f5;
+}
+
+.accordionItem.active .accordionHeader {
+    background-color: #f5f5f5;
+}
+
+.questionNumber {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-right: 15px;
+  flex-shrink: 0;
+  color: #4F3718;
+}
+
+.questionText {
+  flex-grow: 1;
+  margin: 0;
+  color: #4F3718;
+}
+
+.accordionIcon {
+  font-size: 1.2em;
+  margin-left: 20px;
+  color: #4F3718;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.accordionIcon.rotate {
+  transform: rotate(180deg);
+}
+
+.accordionContent {
+  background-color: #f5f5f5;
+  padding: 0 25px;
+  text-align: left;
+  font-size: 1em;
+  line-height: 1.6;
+  color: #503e26;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out, padding-bottom 0.5s ease-in-out;
+}
+
+.accordionContent p {
+  margin: 0;
+  padding-bottom: 20px;
+}
+
+
+@media (max-width: 768px) {
+  .faqSection {
+    padding: 60px 20px;
+  }
+  .sectionTitle {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+  }
+  .accordionHeader {
+    padding: 15px 20px;
+    font-size: 1em;
+  }
+  .accordionIcon {
+    font-size: 1.1em;
+    margin-left: 15px;
+  }
+  .accordionContent {
+    padding: 0 20px;
+  }
+  .accordionContent p {
+    padding-bottom: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sectionTitle {
+    font-size: 2em;
+  }
+  .accordionHeader {
+    padding: 12px 15px;
+  }
+  .questionNumber {
+    margin-right: 10px;
+  }
+}
