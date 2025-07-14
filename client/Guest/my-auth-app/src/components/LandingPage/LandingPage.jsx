@@ -6,8 +6,6 @@ import styles from './LandingPage.module.css';
 import HistorySection from './HistorySection'; 
 import ServicesSection from './ServicesSection';  
 import BoardLodgingSection from './BoardLodgingSection';
-import FAQSection from './FAQSection';
-import ResSection from './ResSection';
 
 
 function LandingPage({ onReserveNow }) {
@@ -20,8 +18,6 @@ function LandingPage({ onReserveNow }) {
         <HistorySection />
         <ServicesSection /> 
         <BoardLodgingSection /> 
-        <FAQSection />
-        <ResSection />
       </main>
 
       <Footer />
