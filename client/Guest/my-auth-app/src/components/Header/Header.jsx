@@ -7,7 +7,7 @@ function Header({ onReserveNow }) {
     <header className={styles.headerContainer}>
       <div className={styles.logoGroup}>
         <img src={mountainLogo} alt="Baguio Teachers Camp Logo" className={styles.headerLogo} />
-        <p className={styles.headerLogoText}>Baguio Teachers Camp</p>
+        <p className={styles.headerLogoText}>BTC</p>
       </div>
 
       <nav className={styles.navbarNav}>

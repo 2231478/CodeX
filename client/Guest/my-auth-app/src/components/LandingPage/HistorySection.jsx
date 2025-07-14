@@ -1,10 +1,12 @@
 import React from 'react';
 import styles from './HistorySection.module.css';
-import historyImage from '../../assets/homepage.png'; // to be change
 
 function HistorySection() {
+  const videoId = 'JtN4G8pdJDU';
+  const youtubeVideoUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}`; 
+  
   return (
-    <section className={styles.historySection} id="history-section"> 
+    <section className={styles.historySection} id="history-section">
       <h2 className={styles.sectionTitle}>HISTORY</h2>
       <div className={styles.historyContent}>
         <div className={styles.historyText}>
@@ -24,9 +26,16 @@ function HistorySection() {
             nurturing educators, truly embodying its mission of providing a serene environment for learning and growth.
           </p>
         </div>
-        <div className={styles.historyImageContainer}>
-          <img src={historyImage} alt="Baguio Teachers Camp 1908" className={styles.historyImage} />
-          <p className={styles.imageCaption}>BAGUIO TEACHERS CAMP<br/>1908</p>
+        <div className={styles.historyVideoContainer}> 
+          <iframe
+            className={styles.historyVideo} 
+            src={youtubeVideoUrl}
+            title="Baguio Teachers Camp: Beyond Tales and History."
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+          <p className={styles.videoCaption}>Baguio Teachers Camp: Beyond Tales and History. (2020)</p> 
         </div>
       </div>
     </section>
