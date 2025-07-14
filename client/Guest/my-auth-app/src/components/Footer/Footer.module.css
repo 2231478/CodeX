@@ -1,6 +1,6 @@
 .footerContainer {
-  background-color: #2E4B2F; 
-  color: white;
+  background-color: #1E3C24; 
+  color: #f5f5f5;
   padding-top: 40px; 
   display: flex;
   flex-direction: column;
@@ -33,13 +33,13 @@
 }
 
 .footerLogo {
-  width: 150px;
+  width: 250px;
   height: auto;
   margin-bottom: 10px;
 }
 
 .footerLogoText {
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-weight: bold;
   color: white;
   white-space: nowrap;
@@ -48,7 +48,7 @@
 .addressText {
   font-size: 0.9em;
   line-height: 1.5;
-  color: #D3D3D3;
+  color: #f5f5f5;
 }
 
 .sectionTitle {
