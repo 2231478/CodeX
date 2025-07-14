@@ -5,6 +5,8 @@ import Footer from '../Footer/Footer';
 import styles from './LandingPage.module.css';
 import HistorySection from './HistorySection'; 
 import ServicesSection from './ServicesSection';  
+import BoardLodgingSection from './BoardLodgingSection';
+
 
 function LandingPage({ onReserveNow }) {
   return (
@@ -15,6 +17,7 @@ function LandingPage({ onReserveNow }) {
         <LandingHero onReserveNow={onReserveNow} />
         <HistorySection />
         <ServicesSection /> 
+        <BoardLodgingSection /> 
       </main>
 
       <Footer />
