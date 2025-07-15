@@ -376,6 +376,105 @@ const reservationModule = {
       responseData.error = error.message;
     }
     return responseData;
+  },
+
+  /**
+   * Retrieves all reservations by the given status.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} status - The status of the reservations to fetch.
+   * @param {Object} user - The user object containing the user ID and role.
+   * @returns {Object} Response data with status, error, and an array of reservations on success.
+   */
+  getAllReservationsByStatus: async (dbHelper, status, user) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching reservations'
+    };
+    try {
+      if (!user) {
+        responseData.status = Status.UNAUTHORIZED;
+        responseData.error = 'User not logged in';
+        return responseData;
+      }
+
+      if (user.role == UserRole.GUEST) {
+        responseData.status = Status.FORBIDDEN;
+        responseData.error = 'You are not authorized to perform this action';
+        return responseData;
+      }
+
+      if (!status) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Status is required';
+        return responseData;
+      }
+
+      if (!isValidReservationStatus(status)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid status';
+        return responseData;
+      }
+
+      const reservations = await dbHelper.find('reservation', { status: status }, { __v: 0, createdAt: 0 });
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.reservations = reservations;
+    } catch (error) {
+      console.error('Error fetching reservations by status:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
+  approveOrDeclineReservation: async (dbHelper, reservationId, status, user) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error approving or declining reservation'
+    };
+    try {
+      if (!user || !user.userId) {
+        responseData.status = Status.UNAUTHORIZED;
+        responseData.error = 'User not logged in';
+        return responseData;
+      }
+
+      if (user.role !== UserRole.ADMIN) {
+        responseData.status = Status.FORBIDDEN;
+        responseData.error = 'You are not authorized to perform this action';
+        return responseData;
+      }
+
+      if (!reservationId) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Reservation ID is required';
+        return responseData;
+      }
+
+      if (!isValidReservationStatus(status)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid or missing status parameter';
+        return responseData;
+      }
+
+      const updatedReservation = await dbHelper.findOneAndUpdate(
+        'reservation',
+        { _id: reservationId },
+        { status: status },
+        { new: true }
+      );
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.message = 'Reservation status updated successfully';
+      responseData.reservation = {
+        _id: updatedReservation._id,
+        status: updatedReservation.status
+      };
+    } catch (error) {
+      console.error('Error approving or declining reservation:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
   }
 };
 
@@ -392,6 +491,10 @@ function isValidCategory(category) {
 
 function isValidGuestType(type) {
     return Object.values(GuestType).includes(type);
+}
+
+function isValidReservationStatus(status) {
+  return Object.values(ReservationStatus).includes(status);
 }
 
 function isNonNegativeInteger(value) {

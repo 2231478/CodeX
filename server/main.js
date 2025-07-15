@@ -101,6 +101,10 @@ const processGetAPI = async (req, res) => {
                     let responseData = await facilityModule.getAvailableDatesByFacility(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'search-facilities': {
+                    let responseData = await facilityModule.searchFacilities(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
@@ -121,6 +125,10 @@ const processGetAPI = async (req, res) => {
             switch (action) {
                 case 'get-reservation-by-user-id': {
                     let responseData = await reservationModule.getReservationByUserId(dbHelper, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'get-all-reservations-by-status': {
+                    let responseData = await reservationModule.getAllReservationsByStatus(dbHelper, id, req.user);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
@@ -254,6 +262,10 @@ const processPostAPI = async (req, res) => {
                     let responseData = await reservationModule.cancelBooking(dbHelper, id, req.user);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'accept-or-decline-reservation': {
+                    let responseData = await reservationModule.acceptOrDeclineReservation(dbHelper, id, data, req.user);
+                    return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }
@@ -315,7 +327,8 @@ function isProtected(module, action) {
   const protectedEndpoints = {
     user: ['profile', 'logout', 'change-password'],
     profile: ['update', 'uploadPicture'],
-    reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking'],
+    reservation: ['create-reservation', 'get-reservation-by-user-id', 'cancel-booking', 
+                  'get-all-reservations-by-status', 'accept-or-decline-reservation'],
     facility: ['create-facility', 'update-facility', 'delete-facility'],
     'special-service': ['create-special-service', 'update-special-service', 'delete-special-service'],
     dashboard: ['get-todays-reservations-count', 'get-monthly-check-ins-count', 'get-monthly-check-outs-count', 
