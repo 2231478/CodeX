@@ -127,6 +127,10 @@ const processGetAPI = async (req, res) => {
                     let responseData = await reservationModule.getReservationByUserId(dbHelper, req.user);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'get-reservation-by-id': {
+                    let responseData = await reservationModule.getReservationById(dbHelper, id);
+                    return res.status(responseData.status).json(responseData);
+                }
                 case 'get-all-reservations-by-status': {
                     let responseData = await reservationModule.getAllReservationsByStatus(dbHelper, id, req.user);
                     return res.status(responseData.status).json(responseData);

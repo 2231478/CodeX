@@ -21,22 +21,22 @@ const reservationModule = {
         serviceType, timeOfArrival, otherRequests
       } = data;
 
-      guestName = guestName.trim();
-      homeAddress = homeAddress.trim();
-      officeAddress = officeAddress.trim();
-      category = category.trim();
-      guestType = guestType.trim();
-      telephone = telephone.trim();
-      officeTelephone = officeTelephone.trim();
-      numberOfAdults = numberOfAdults.trim();
-      numberOfChildren = numberOfChildren.trim();
-      numberOfPwds = numberOfPwds.trim();
-      emergencyContact = emergencyContact.trim();
-      dateOfArrival = dateOfArrival.trim();
-      dateOfDeparture = dateOfDeparture.trim();
-      timeOfArrival = timeOfArrival.trim();
-      otherRequests = otherRequests.trim();
-      serviceType = serviceType.trim();
+      guestName = guestName?.trim();
+      homeAddress = homeAddress?.trim();
+      officeAddress = officeAddress?.trim();
+      category = category?.trim();
+      guestType = guestType?.trim();
+      telephone = telephone?.trim();
+      officeTelephone = officeTelephone?.trim();
+      numberOfAdults = numberOfAdults?.trim();
+      numberOfChildren = numberOfChildren?.trim();
+      numberOfPwds = numberOfPwds?.trim();
+      emergencyContact = emergencyContact?.trim();
+      dateOfArrival = dateOfArrival?.trim();
+      dateOfDeparture = dateOfDeparture?.trim();
+      timeOfArrival = timeOfArrival?.trim();
+      otherRequests = otherRequests?.trim();
+      serviceType = serviceType?.trim();
 
       if (
         !isPresent(guestName) ||
@@ -275,6 +275,66 @@ const reservationModule = {
     return responseData;
   },
 
+/**
+ * Fetches a reservation by its ID.
+ * @param {Object} dbHelper - The database helper for database operations.
+ * @param {string} reservationId - The ID of the reservation to be fetched.
+ * @returns {Object} Response data with status, error, and reservation on success.
+ */
+
+  getReservationById: async (dbHelper, reservationId) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error fetching reservation'
+    };
+    try {
+      if (!reservationId) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Reservation ID is required';
+        return responseData;
+      }
+
+      const reservation = await dbHelper.findOne('reservation', { _id: reservationId });
+      if (!reservation) {
+        responseData.status = Status.NOT_FOUND;
+        responseData.error = 'Reservation not found';
+        return responseData;
+      }
+
+      const objectName = reservation.letterOfIntentFile;
+      let url = null;
+      if (objectName) {
+        try {
+          [url] = await bucket.file(objectName).getSignedUrl({
+            version: 'v4',
+            expires: Date.now() + 1000 * 60 * 60, // 1 hour
+            action: 'read',
+          });
+        } catch (urlError) {
+          console.error('Error generating signed URL:', urlError);
+          responseData.error = 'Error generating signed URL';
+          return responseData;
+        }
+      }
+
+      const reservationObject = reservation.toObject();
+      if (reservationObject.numberOfGuests) {
+        delete reservationObject.numberOfGuests.adult;
+        delete reservationObject.numberOfGuests.children;
+        delete reservationObject.numberOfGuests.pwds;
+      }
+      reservationObject.letterOfIntentFile = url;
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.reservation = reservationObject;
+    } catch (error) {
+      console.error('Error fetching reservation by ID:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
+  },
+
   /**
    * Fetches all reservations for a given user.
    * @param {Object} dbHelper - The database helper for database operations.
@@ -363,6 +423,12 @@ const reservationModule = {
         { status: ReservationStatus.CANCELLED },
         { new: true }
       );
+
+      if (!updatedReservation) {
+        responseData.status = Status.INTERNAL_SERVER_ERROR;
+        responseData.error = 'Failed to update reservation status';
+        return responseData;
+      }
 
       responseData.status = Status.OK;
       responseData.error = null;
