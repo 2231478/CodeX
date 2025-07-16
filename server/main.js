@@ -259,7 +259,7 @@ const processPostAPI = async (req, res) => {
         case 'reservation':
             switch (action) {
                 case 'create-reservation': {
-                    let responseData = await reservationModule.addReservation(dbHelper, data, req.file, req.user);
+                    let responseData = await reservationModule.addReservation(dbHelper, data, req.file, req.user, userSocketMap);
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'cancel-booking': {
@@ -458,23 +458,37 @@ app.use((req, res) => {
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
+const userSocketMap = new Map();
 
 server.on('upgrade', (req, socket, head) => {
-  sessionParser(req, {}, () => {
-    if (!req.session.userId) {
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
-  });
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+  const token = authHeader.split(' ')[1];
+  const user = jwtHelper.verifyAccessToken(token);
+  if (!user) {
+    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+  req.user = user; 
+  wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
 });
 
 wss.on('connection', (ws, req) => {
-  const userId = req.session.userId;
+   const userId = req.user.userId;
+  userSocketMap.set(userId, ws);
   console.log(`New client connected: ${userId}`);
+
+  ws.on('close', () => {
+    userSocketMap.delete(userId); 
+    console.log(`Client ${userId} has disconnected`);
+  });
+
   ws.on('message', msg => ws.send(`Hello ${userId}, you sent -> ${msg}`));
-  ws.on('close', () => console.log(`Client ${userId} has disconnected`));
 });
 
 server.listen(port, () => {

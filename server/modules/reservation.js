@@ -7,7 +7,7 @@ const storage = new Storage();
 const bucket = storage.bucket(process.env.PRIVATE_BUCKET_NAME);
 
 const reservationModule = {
-  addReservation: async (dbHelper, data, file, user) => {
+  addReservation: async (dbHelper, data, file, user, userSocketMap) => {
     const responseData = {
       status: Status.INTERNAL_SERVER_ERROR,
       error: 'Error on booking reservation'
@@ -252,7 +252,30 @@ const reservationModule = {
 
       const reservation = await dbHelper.create('reservation', reservationData);
 
-      const reservationObject= { ...reservation };
+      const notification = {
+        title: "Congratulations, Camper! Confirmation Successful — your reservation is now confirmed. We can't wait to welcome you!",
+        message: `Thank you for choosing Teachers' Camp! Your reservation has been confirmed. We're excited to welcome you and ensure you have a comfortable and memorable stay.`,
+        isRead: false,
+        userId: user.userId,
+        reservationId: reservation._id,
+        createdAt: new Date()
+      };
+
+      await dbHelper.create('notification', notification);
+
+      const userWs = userSocketMap.get(user.userId);
+      if (userWs && userWs.readyState === 1) {
+        userWs.send(JSON.stringify({
+          type: 'notification',
+          notification: {
+            title: notification.title,
+            message: notification.message,
+            createdAt: notification.createdAt,
+          }
+        }));
+      }
+
+      const reservationObject = reservation.toObject();
       delete reservationObject.letterOfIntentUrl;
       delete reservationObject.__v;
       delete reservationObject.createdAt;
