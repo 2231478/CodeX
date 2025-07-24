@@ -196,3 +196,23 @@
     font-size: 2em;
   }
 }
+
+.cardBottomText {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 24px;
+  font-size: 0.2em;
+  font-weight: 500;
+  box-shadow: 0 2px 12px rgba(30, 60, 36, 0.15);
+  cursor: pointer;
+  z-index: 4;
+}
+
+.cardBottomText:hover {
+  background: #538E5E;
+  box-shadow: 0 4px 18px rgba(83, 142, 94, 0.18);
+}

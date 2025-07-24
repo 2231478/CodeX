@@ -21,10 +21,10 @@ function LandingPage({ onReserveNow }) {
         <ServicesSection /> 
         <BoardLodgingSection /> 
         <FAQSection />
-        <ResSection />
+        <ResSection onReserveNow={onReserveNow} />
       </main>
 
-      <Footer />
+      <Footer onReserveNow={onReserveNow} /> 
     </div>
   );
 }

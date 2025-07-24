@@ -115,6 +115,9 @@ function ServicesSection() {
                 <div className={styles.cardOverlay}>
                   <h3 className={styles.cardTitle}>{service.title}</h3>
                 </div>
+                <div className={styles.cardBottomText}>
+                  <span>Click for more services</span>
+                </div>
               </div>
             ))}
           </div>

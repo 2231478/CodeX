@@ -1,14 +1,19 @@
 import React from 'react';
 import styles from './ResSection.module.css';
 
-function ResSection() { 
+function ResSection({ onReserveNow }) {
   return (
-    <section className={styles.resSection}> 
+    <section className={styles.resSection}>
       <div className={styles.buttonContainer}>
-        <button className={styles.reserveNowButton}>RESERVE NOW!</button>
+        <button
+          className={styles.reserveNowButton}
+          onClick={onReserveNow} 
+        >
+          RESERVE NOW!
+        </button>
       </div>
     </section>
   );
 }
 
-export default ResSection; 
+export default ResSection;
