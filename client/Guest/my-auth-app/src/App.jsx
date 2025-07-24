@@ -9,21 +9,17 @@ import LandingPage from './components/LandingPage/LandingPage';
 
 import backgroundImage from './assets/background-blur.png';
 import styles from './App.module.css';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 
-function App() {
-  const [pageState, setPageState] = useState('landing');
-  const [authFormState, setAuthFormState] = useState('login'); 
-
-  const handleReserveNow = () => {
-    setPageState('auth');
-    setAuthFormState('login');
-  };
+function AuthLayout() {
+  const [authFormState, setAuthFormState] = useState('login');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const navigate = useNavigate();
 
   const toggleAuthForm = (state) => {
     setAuthFormState(state);
+    navigate(`/auth/${state}`);
   };
-
-  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const handleLoginSuccess = () => {
     console.log("Login successful! Redirecting to logged-in experience.");
@@ -31,37 +27,54 @@ function App() {
   };
 
   return (
-    <>
-      {pageState === 'landing' ? (
-        <LandingPage onReserveNow={handleReserveNow} />
-      ) : (
-        <div className={styles.authPageWrapper} style={{ backgroundImage: `url(${backgroundImage})` }}>
-          <div className={styles.authContainer}>
-            <AuthSidePanel
-              isLogin={authFormState === 'login'}
-              isForgotPassword={authFormState === 'forgot-password'}
-              onToggleForm={toggleAuthForm}
+    <div className={styles.authPageWrapper} style={{ backgroundImage: `url(${backgroundImage})` }}>
+      <div className={styles.authContainer}>
+        <AuthSidePanel
+          isLogin={authFormState === 'login'}
+          isForgotPassword={authFormState === 'forgot-password'}
+          onToggleForm={toggleAuthForm}
+        />
+        <AuthFormContainer>
+          {authFormState === 'login' && (
+            <LoginForm
+              onForgotPassword={() => toggleAuthForm('forgot-password')}
+              onLoginSuccess={handleLoginSuccess}
             />
-            <AuthFormContainer>
-              {authFormState === 'login' && (
-                <LoginForm
-                  onForgotPassword={() => toggleAuthForm('forgot-password')}
-                  onLoginSuccess={handleLoginSuccess}
-                />
-              )}
-              {authFormState === 'signup' && (
-                <SignUpForm onShowTerms={() => setShowTermsModal(true)} />
-              )}
-              {authFormState === 'forgot-password' && (
-                <ForgotPasswordForm onBackToLogin={() => toggleForm('login')} />
-              )}
-            </AuthFormContainer>
-          </div>
-          {showTermsModal && <Terms onClose={() => setShowTermsModal(false)} />}
-        </div>
-      )}
-    </>
+          )}
+          {authFormState === 'signup' && (
+            <SignUpForm onShowTerms={() => setShowTermsModal(true)} />
+          )}
+          {authFormState === 'forgot-password' && (
+            <ForgotPasswordForm onBackToLogin={() => toggleAuthForm('login')} />
+          )}
+        </AuthFormContainer>
+      </div>
+      {showTermsModal && <Terms onClose={() => setShowTermsModal(false)} />}
+    </div>
   );
 }
 
-export default App;
+function App() {
+  const navigate = useNavigate();
+
+  const handleReserveNow = () => {
+    navigate('/auth/login');
+  };
+
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
+      <Route path="/auth/*" element={<AuthLayout />} />
+    </Routes>
+  );
+}
+
+function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+export default AppWrapper;
