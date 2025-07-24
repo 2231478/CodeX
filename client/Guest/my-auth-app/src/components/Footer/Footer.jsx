@@ -6,7 +6,7 @@ import phoneIcon from '../../assets/phoneIcon.svg';
 import emailIcon from '../../assets/mailIcon.svg';
 
 
-function Footer() {
+function Footer({ onReserveNow }) { 
   const address = "C364+QGG, Leonard Wood Rd, Baguio, Benguet";
   const phoneNumber = "(074) 442 3517";
   const emailAddress = "teacherscamp@deped.gov.ph";
@@ -14,7 +14,7 @@ function Footer() {
   const formattedPhoneNumber = phoneNumber.replace(/[^0-9+]/g, '');
 
   return (
-    <footer className={styles.footerContainer}>
+    <footer className={styles.footerContainer} id="footer">
       <div className={styles.footerContent}>
         <div className={styles.footerSection}>
           <div className={styles.logoGroup}>
@@ -45,19 +45,23 @@ function Footer() {
 
         <div className={styles.footerSection}>
           <h3 className={styles.sectionTitle}>CONTACTS</h3>
+           <p className={styles.contactItem}>
+            <a href={`mailto:${emailAddress}`} className={styles.contactLink}>
+              <img src={emailIcon} alt="Email Icon" className={styles.contactIcon} /> {emailAddress}
+            </a>
+          </p>
           <p className={styles.contactItem}>
             <a href={`tel:${formattedPhoneNumber}`} className={styles.contactLink}>
               <img src={phoneIcon} alt="Phone Icon" className={styles.contactIcon} /> {phoneNumber}
             </a>
           </p>
-          <p className={styles.contactItem}>
-            <a href={`mailto:${emailAddress}`} className={styles.contactLink}>
-              <img src={emailIcon} alt="Email Icon" className={styles.contactIcon} /> {emailAddress}
-            </a>
-          </p>
-          <a href="#" className={styles.taraCampButtonLink}>
-            <button className={styles.taraCampButton}>TaraCAMP!</button>
-          </a>
+  
+          <button
+            className={styles.taraCampButton}
+            onClick={onReserveNow} 
+          >
+            TaraCAMP!
+          </button>
         </div>
       </div>
 
