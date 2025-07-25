@@ -1,5 +1,5 @@
 .headerContainer {
-  background-color: #1e3c24;
+  background-color: #1e3c24e9;
   color: #F5F5F5;
   padding: 15px 40px;
   display: flex;
@@ -7,14 +7,23 @@
   align-items: center;
   width: 100%;
   box-sizing: border-box;
-  position: fixed;
+  position: fixed; 
   top: 0;
   left: 0;
-  z-index: 1000;
+  z-index: 1000; 
+  cursor: pointer;
 }
 
 .logoGroup {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerLogoLink {
+  text-decoration: none; 
+  color: inherit;
+  display: flex; 
   align-items: center;
   gap: 10px;
 }
@@ -26,7 +35,7 @@
 
 .headerLogoText {
   font-size: 1.3em;
-  font-weight: bold;
+  font-weight: 530;
   color: #F5F5F5;
   white-space: nowrap;
 }
@@ -49,7 +58,7 @@
   color: #F5F5F5;
   text-decoration: none;
   font-size: 1em;
-  font-weight: 530;
+  font-weight: 500;
   padding: 5px 0;
   transition: color 0.3s ease, border-bottom 0.3s ease;
 }
