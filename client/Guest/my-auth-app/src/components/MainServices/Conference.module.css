@@ -1,0 +1,134 @@
+.conferenceSection {
+  margin: 10px 132px 60px 132px;
+}
+
+.sectionTitle {
+  font-size: 3em;
+  color: #538E5E;
+  margin-bottom: 30px;
+  letter-spacing: 15px;
+  font-weight: bold;
+}
+
+.conferenceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 30px;
+  justify-content: center;
+  padding: 0 10px;
+  row-gap: 50px;
+}
+
+.conferenceCard {
+  background-color: #f8f8f8;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 34, 10, 0.36);
+  overflow: hidden;
+  text-align: center;
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.conferenceImagePlaceholder {
+  width: 100%;
+  height: 200px;
+  background-color: #E6E6E6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.conferenceImagePlaceholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardContent {
+  padding: 20px;
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.conferenceName {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  color: #4F3718;
+  padding: 0 10px;
+}
+
+.conferenceCapacity,
+.conferencePrice {
+  font-size: 0.95em;
+  color: #888;
+  margin-top: 0;
+  margin-bottom: 10px;
+  padding: 0 10px;
+}
+
+.checkButton {
+  background-color: #1E3C24;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 60px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: center;
+}
+
+.checkButton:hover {
+  background-color: #45a049;
+}
+
+@media (max-width: 992px) {
+  .conferenceSection {
+    margin: 10px 20px 60px 20px;
+  }
+  .sectionTitle {
+    font-size: 2em;
+    letter-spacing: normal;
+  }
+  .conferenceGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 576px) {
+  .conferenceSection {
+    margin: 10px 10px 40px 10px;
+  }
+  .sectionTitle {
+    font-size: 1.8em;
+  }
+  .conferenceCard {
+    padding-bottom: 10px;
+  }
+  .conferenceImagePlaceholder {
+    height: 150px;
+  }
+  .conferenceName {
+    font-size: 1.1em;
+  }
+  .conferenceCapacity,
+  .conferencePrice {
+    font-size: 0.85em;
+  }
+  .checkButton {
+    padding: 8px 20px;
+    font-size: 0.9em;
+  }
+}

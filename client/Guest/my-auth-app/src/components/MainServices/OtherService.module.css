@@ -1,0 +1,119 @@
+.otherServiceSection {
+  margin: 10px 132px 60px 132px;
+  text-align: left;
+}
+
+.sectionTitle {
+  font-size: 3em;
+  color: #538E5E;
+  margin-bottom: 30px;
+  letter-spacing: 15px;
+  font-weight: bold;
+}
+
+.servicesContainer {
+  background-color: #f8f8f8;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 34, 10, 0.36);
+  padding: 30px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.servicesHeader {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #538E5E;
+}
+
+.headerColumn {
+  font-size: 1.8em;
+  color: #4F3718;
+  font-weight: bold;
+  flex: 1;
+  text-align: left;
+}
+
+.headerPriceColumn {
+  text-align: right;
+}
+
+.servicesList {
+}
+
+.serviceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.serviceItem:last-child {
+  border-bottom: none;
+}
+
+.serviceName {
+  font-size: 1.1em;
+  color: #1E3C24;
+  flex: 1;
+}
+
+.servicePrice {
+  font-size: 1.1em;
+  color: #538E5E;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 992px) {
+  .otherServiceSection {
+    margin: 10px 20px 60px 20px;
+  }
+  .sectionTitle {
+    font-size: 2em;
+    letter-spacing: normal;
+  }
+  .servicesContainer {
+    padding: 20px 25px;
+  }
+  .headerColumn {
+    font-size: 1.5em;
+  }
+  .serviceName,
+  .servicePrice {
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 576px) {
+  .otherServiceSection {
+    margin: 10px 10px 40px 10px;
+  }
+  .sectionTitle {
+    font-size: 1.8em;
+  }
+  .servicesContainer {
+    padding: 15px 15px;
+  }
+  .headerColumn {
+    font-size: 1.2em;
+  }
+  .serviceItem {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 0;
+  }
+  .serviceName,
+  .servicePrice {
+    width: 100%;
+    text-align: left;
+    font-size: 0.9em;
+  }
+  .servicePrice {
+    margin-top: 5px;
+  }
+}
