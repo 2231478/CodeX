@@ -1,13 +1,13 @@
 .dormitoriesSection {
-  margin-top: 40px;
+  margin-top: 10px;
   margin: 0 132px;
 }
 
 .sectionTitle {
-  font-size: 2.5em;
-  color: #4F3718;
-  text-align: center;
+  font-size: 4em;
+  color: #538E5E;
   margin-bottom: 30px;
+  letter-spacing: 15px;
 }
 
 .dormitoryGrid {
@@ -21,8 +21,8 @@
 
 .dormitoryCard {
   background-color: #f8f8f8;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0, 34, 10, 0.36);
   overflow: hidden;
   text-align: center;
   padding-bottom: 20px;
@@ -34,7 +34,7 @@
 
 .dormitoryImagePlaceholder {
   width: 100%;
-  height: 180px;
+  height: 200px;
   background-color: #E6E6E6;
   display: flex;
   justify-content: center;
@@ -56,23 +56,23 @@
 .dormitoryInfo {
   font-size: 0.95em;
   color: #888;
-  margin-top: 5px;
+  margin-top: 0;
   padding: 0 10px;
 }
 .dormitoryRate {
   font-size: 0.95em;
   color: #888;
-  margin-top: 5px;
+  margin-top: 0;
   margin-bottom: 15px;
   padding: 0 10px;
 }
 
 .checkButton {
-  background-color: #4CAF50;
+  background-color: #1E3C24;
   color: white;
   border: none;
   border-radius: 20px;
-  padding: 10px 30px;
+  padding: 10px 60px;
   font-size: 1em;
   cursor: pointer;
   transition: background-color 0.3s ease;
