@@ -1,15 +1,38 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; 
 import styles from './NavSearch.module.css';
 
 function MainServicesNavSearch() {
+  const location = useLocation(); 
+  const basePath = '/services';
+
   return (
     <div className={styles.navAndSearchContainer}>
       <div className={styles.navTabs}>
-        <Link to="#" className={`${styles.navTab} ${styles.activeTab}`}>Dormitory</Link>
-        <Link to="#" className={styles.navTab}>Cottages</Link>
-        <Link to="#" className={styles.navTab}>Conference</Link>
-        <Link to="#" className={styles.navTab}>Other Service</Link>
+        <Link
+          to={`${basePath}/dormitories`}
+          className={`${styles.navTab} ${location.pathname === `${basePath}/dormitories` ? styles.activeTab : ''}`}
+        >
+          Dormitory
+        </Link>
+        <Link
+          to={`${basePath}/cottages`} 
+          className={`${styles.navTab} ${location.pathname === `${basePath}/cottages` ? styles.activeTab : ''}`}
+        >
+          Cottages
+        </Link>
+        <Link
+          to={`${basePath}/conference`}
+          className={`${styles.navTab} ${location.pathname === `${basePath}/conference` ? styles.activeTab : ''}`}
+        >
+          Conference
+        </Link>
+        <Link
+          to={`${basePath}/otherservice`}
+          className={`${styles.navTab} ${location.pathname === `${basePath}/otherservice` ? styles.activeTab : ''}`}
+        >
+          Other Service
+        </Link>
       </div>
       <div className={styles.searchFilter}>
         <input type="text" placeholder="Search" className={styles.searchInput} />

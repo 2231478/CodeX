@@ -66,7 +66,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
       <Route path="/auth/*" element={<AuthLayout />} />
-      <Route path="/main-services" element={<MainServices />} />
+      <Route path="/services/*" element={<MainServices />} />
     </Routes>
   );
 }

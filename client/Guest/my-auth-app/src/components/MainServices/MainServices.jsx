@@ -1,16 +1,20 @@
 import React from 'react';
+import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from '../Header/Header';
 import Footer from '../Footer/Footer';
-import Header from './Header';
 import styles from './MainServices.module.css';
-import NavSearch from './NavSearch';
-import Dormitories from './Dormitories';
-import ServicesRates from './ServicesRates';
-import { useNavigate } from 'react-router-dom'; 
 
+import MainServicesHeader from './Header';
+import MainServicesNavSearch from './NavSearch';
+import MainServicesDormitories from './Dormitories';
+import MainServicesCottages from './Cottages';
+import MainServicesRates from './ServicesRates';
+import MainServicesConference from './Conference';
+import MainServicesOtherService from './OtherService';
 
 function MainServices() {
   const navigate = useNavigate();
+
   const handleReserveNow = () => {
     console.log("Reserve Now clicked from MainServices page!");
     navigate('/auth/login');
@@ -21,15 +25,23 @@ function MainServices() {
       <Navbar onReserveNow={handleReserveNow} />
 
       <main className={styles.mainContent}>
-        <Header />
-        <div className={styles.contentWrapper}> 
-          <NavSearch />
-          <Dormitories />
-          <ServicesRates />
+        <MainServicesHeader />
+        <div className={styles.contentWrapper}>
+          <MainServicesNavSearch />
+
+          <Routes>
+            <Route path="/" element={<Navigate to="dormitories" replace />} />
+            <Route path="dormitories" element={<MainServicesDormitories />} />
+            <Route path="cottages" element={<MainServicesCottages />} />
+            <Route path="conference" element={<MainServicesConference />} />
+            <Route path="otherservice" element={<MainServicesOtherService />} />
+          </Routes>
+
+          <MainServicesRates />
         </div>
       </main>
 
-      <Footer onReserveNow={handleReserveNow} /> 
+      <Footer onReserveNow={handleReserveNow} />
     </div>
   );
 }

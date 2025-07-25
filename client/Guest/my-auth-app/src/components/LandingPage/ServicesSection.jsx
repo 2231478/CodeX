@@ -94,7 +94,7 @@ function ServicesSection() {
   };
 
   const handleCardClick = () => {
-    navigate('/main-services'); 
+    navigate('/services'); 
   };
 
   return (
