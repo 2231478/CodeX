@@ -1,0 +1,41 @@
+.mainServicesPageContainer {
+  font-family: Arial, sans-serif;
+  color: #333;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
+  flex-grow: 1;
+}
+
+.contentWrapper {
+  max-width: 100%;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 992px) {
+  .mainContent {
+    padding-top: 90px;
+  }
+  .contentWrapper {
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 576px) {
+  .mainContent {
+    padding-top: 80px;
+  }
+  .contentWrapper {
+    margin-top: 20px;
+    padding: 15px;
+  }
+}

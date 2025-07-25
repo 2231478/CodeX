@@ -6,6 +6,7 @@ import SignUpForm from './components/SignUpForm/SignUpForm';
 import ForgotPasswordForm from './components/ForgotPasswordForm/ForgotPasswordForm';
 import Terms from './components/Terms/Terms';
 import LandingPage from './components/LandingPage/LandingPage';
+import MainServices from './components/MainServices/MainServices';
 
 import backgroundImage from './assets/background-blur.png';
 import styles from './App.module.css';
@@ -65,6 +66,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
       <Route path="/auth/*" element={<AuthLayout />} />
+      <Route path="/main-services" element={<MainServices />} />
     </Routes>
   );
 }

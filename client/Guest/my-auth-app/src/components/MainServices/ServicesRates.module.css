@@ -1,0 +1,47 @@
+.ratesExcessSection {
+  margin-top: 60px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.excessRatesTitle {
+  font-size: 1.8em;
+  color: #4F3718;
+  margin-bottom: 20px;
+}
+
+.excessRatesContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  font-size: 1em;
+  color: #555;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.excessRatesContent p {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  line-height: 1.5;
+}
+
+@media (max-width: 992px) {
+  .excessRatesContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .excessRatesTitle {
+    font-size: 1.5em;
+  }
+  .excessRatesContent p {
+    font-size: 0.9em;
+  }
+}
