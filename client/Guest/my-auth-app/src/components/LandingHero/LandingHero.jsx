@@ -6,7 +6,7 @@ function LandingHero({ onReserveNow }) {
   return (
     <div 
       className={styles.heroSection} 
-      style={{ backgroundImage: `url(${landingHeroBg})` }}
+      style={{ backgroundImage: `url(${landingHeroBg})` }} id="hero"
     >
       <div className={styles.heroContent}>
         <h1 className={styles.heroHeadline}>Unwind,<br/>Recharge,<br/>& Thrive</h1>

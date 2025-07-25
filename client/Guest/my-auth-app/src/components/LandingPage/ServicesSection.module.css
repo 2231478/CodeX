@@ -81,8 +81,8 @@
   font-weight: bold;
   opacity: 0; 
   transition: opacity 0.5s ease-in-out;
-  pointer-events: none;
   z-index: 1;
+  cursor: pointer;
 }
 
 .serviceCard::before {
@@ -210,9 +210,4 @@
   box-shadow: 0 2px 12px rgba(30, 60, 36, 0.15);
   cursor: pointer;
   z-index: 4;
-}
-
-.cardBottomText:hover {
-  background: #538E5E;
-  box-shadow: 0 4px 18px rgba(83, 142, 94, 0.18);
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './ServicesSection.module.css';
-
 import conferenceImage from '../../assets/conference.jpg';
 import lodgingImage from '../../assets/lodging.jpg';
 import eventsImage from '../../assets/events.jpg';
@@ -36,7 +36,9 @@ const servicesData = [
 function ServicesSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // Initialize useNavigate 
 
+  // Effect to preload images and manage loading state
   useEffect(() => {
     let imagesLoadedCount = 0;
     const totalImages = servicesData.length;
@@ -46,7 +48,7 @@ function ServicesSection() {
       if (imagesLoadedCount === totalImages) {
         setTimeout(() => {
           setLoading(false);
-        }, 500);
+        }, 500); // Small delay to show spinner
       }
     };
 
@@ -74,9 +76,9 @@ function ServicesSection() {
         setCurrentSlide((prevSlide) => (prevSlide + 1) % servicesData.length);
       }, 5000);
 
-      return () => clearInterval(interval);
+      return () => clearInterval(interval); 
     }
-  }, [loading, servicesData.length]);
+  }, [loading, servicesData.length]); 
 
   const goToNextSlide = () => {
     setCurrentSlide((prevSlide) => (prevSlide + 1) % servicesData.length);
@@ -86,8 +88,13 @@ function ServicesSection() {
     setCurrentSlide((prevSlide) => (prevSlide - 1 + servicesData.length) % servicesData.length);
   };
 
+
   const goToSlide = (index) => {
     setCurrentSlide(index);
+  };
+
+  const handleCardClick = () => {
+    navigate('/main-services'); 
   };
 
   return (
@@ -111,12 +118,13 @@ function ServicesSection() {
                 key={service.id}
                 className={`${styles.serviceCard} ${index === currentSlide ? styles.active : ''}`}
                 style={{ backgroundImage: `url(${service.image})` }}
+                onClick={handleCardClick} 
               >
                 <div className={styles.cardOverlay}>
                   <h3 className={styles.cardTitle}>{service.title}</h3>
                 </div>
                 <div className={styles.cardBottomText}>
-                  <span>Click for more services</span>
+                  <span>Click for more services</span> 
                 </div>
               </div>
             ))}
