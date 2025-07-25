@@ -1,41 +1,55 @@
+// src/components/Header/Header.jsx
 import React from 'react';
-import { Link } from 'react-router-dom'; 
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Header.module.css';
 import mountainLogo from '../../assets/logo.png';
 
 function Header({ onReserveNow }) {
-  const scrollToSection = (id) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavLinkClick = (path, sectionId) => {
+    if (location.pathname === path || (location.pathname === '/' && path === '/')) { // Adjusted condition for home path
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(path);
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
   return (
     <header className={styles.headerContainer}>
       <div className={styles.logoGroup}>
-        <Link to="/" className={styles.headerLogoLink}>
+        <a onClick={() => handleNavLinkClick('/', 'hero')} className={styles.headerLogoLink}>
           <img src={mountainLogo} alt="Baguio Teachers Camp Logo" className={styles.headerLogo} />
           <p className={styles.headerLogoText}>BTC</p>
-        </Link>
+        </a>
       </div>
 
       <nav className={styles.navbarNav}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <Link to="/" className={styles.navLink}>HOME</Link>
+            <a onClick={() => handleNavLinkClick('/', 'hero')} className={styles.navLink}>HOME</a>
           </li>
           <li className={styles.navItem}>
-            <a onClick={() => scrollToSection('history-section')} className={styles.navLink}>HISTORY</a>
+            <a onClick={() => handleNavLinkClick('/', 'history-section')} className={styles.navLink}>HISTORY</a>
           </li>
           <li className={styles.navItem}>
-            <a onClick={() => scrollToSection('services-section')} className={styles.navLink}>SERVICES</a>
+            <a onClick={() => handleNavLinkClick('/', 'services-section')} className={styles.navLink}>SERVICES</a>
           </li>
           <li className={styles.navItem}>
-            <a onClick={() => scrollToSection('faq-section')} className={styles.navLink}>FAQS</a>
+            <a onClick={() => handleNavLinkClick('/', 'faq-section')} className={styles.navLink}>FAQS</a>
           </li>
           <li className={styles.navItem}>
-            <a onClick={() => scrollToSection('footer')} className={styles.navLink}>CONTACTS</a>
+            <a onClick={() => handleNavLinkClick('/', 'footer')} className={styles.navLink}>CONTACTS</a>
           </li>
         </ul>
       </nav>
