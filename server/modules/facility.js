@@ -17,119 +17,128 @@ const facilityModule = {
    */
     addFacility: async (dbHelper, data, file, user) => {
       const responseData = {
-          status: Status.INTERNAL_SERVER_ERROR,
-          error: 'Error adding facility'
+        status: Status.INTERNAL_SERVER_ERROR,
+        error: 'Error adding facility'
       };
 
       try {
-          const { name, facilityType, capacity, ratePerPerson, status } = data;
-          name = name.trim();
-          facilityType = facilityType.trim();
+        let { name, facilityType, capacity, ratePerPerson, price, status } = data;
+        name = typeof name === 'string' ? name.trim() : '';
+        facilityType = typeof facilityType === 'string' ? facilityType.trim() : '';
 
-          if (!isPresent(name) || !isPresent(facilityType) || !isPresent(capacity) || !isPresent(ratePerPerson) || !file) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing required fields';
-            return responseData;
-          }
+        if (
+          !isPresent(name) ||
+          !isPresent(facilityType) ||
+          !isPresent(capacity) ||
+          !file ||
+          (facilityType === FacilityType.CONFERENCE && !isPresent(price)) ||
+          ((facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) && !isPresent(ratePerPerson))
+        ) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Missing required fields';
+          return responseData;
+        }
 
-          if (!user || !user.userId) {
-            responseData.status = Status.UNAUTHORIZED;
-            responseData.error = 'User not logged in';
-            return responseData;
-          }
+        if (!user || !user.userId) {
+          responseData.status = Status.UNAUTHORIZED;
+          responseData.error = 'User not logged in';
+          return responseData;
+        }
 
-          if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
-            responseData.status = Status.FORBIDDEN;
-            responseData.error = 'Only CRMS team and Superintendents can add a facility';
-            return responseData;
-          }
+        if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
+          responseData.status = Status.FORBIDDEN;
+          responseData.error = 'Only CRMS team and Superintendents can add a facility';
+          return responseData;
+        }
 
-          const imageError = isValidImage(file);
-          if (imageError) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = imageError;
-            return responseData;
-          }
+        const imageError = isValidImage(file);
+        if (imageError) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = imageError;
+          return responseData;
+        }
 
-          if (!isValidFacilityType(facilityType)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid facility type';
-            return responseData;
-          }
+        if (!isValidFacilityType(facilityType)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid facility type';
+          return responseData;
+        }
 
-          if (!isValidCapacity(capacity)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid capacity';
-            return responseData;
-          }
+        if (!isValidCapacity(capacity)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid capacity';
+          return responseData;
+        }
 
-          if (!isValidRate(ratePerPerson)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid rate per person';
-            return responseData;
-          }
+        if (
+          (facilityType === FacilityType.CONFERENCE && !isValidRate(price)) ||
+          ((facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) && !isValidRate(ratePerPerson))
+        ) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Missing or invalid rate/price for this facility type';
+          return responseData;
+        }
 
-          if (!isValidFacilityStatus(status)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid facility status';
-            return responseData;
-          }
+        if (!isValidFacilityStatus(status)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid facility status';
+          return responseData;
+        }
 
-          let imageUrl;
-          try {
-            const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
-            const blob = bucket.file(filename);
-            await new Promise((resolve, reject) => {
-                const stream = blob.createWriteStream({
-                resumable: false,
-                contentType: file.mimetype,
-                });
-                stream.on('error', reject);
-                stream.on('finish', async () => {
-                resolve();
-                });
-                stream.end(file.buffer);
+        let imageUrl;
+        try {
+          const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
+          const blob = bucket.file(filename);
+          await new Promise((resolve, reject) => {
+            const stream = blob.createWriteStream({
+              resumable: false,
+              contentType: file.mimetype,
             });
-
-            imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-          } catch (err) {
-            responseData.status = Status.INTERNAL_SERVER_ERROR;
-            responseData.error = 'Image upload failed: ' + err.message;
-            return responseData;
-          }
-          
-          const existing = await dbHelper.findOne('facility', {
-            name: name.trim(),
-            facilityType: facilityType.trim(),
+            stream.on('error', reject);
+            stream.on('finish', resolve);
+            stream.end(file.buffer);
           });
+          imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+        } catch (err) {
+          responseData.status = Status.INTERNAL_SERVER_ERROR;
+          responseData.error = 'Image upload failed: ' + err.message;
+          return responseData;
+        }
+        
+        const existing = await dbHelper.findOne('facility', { name, facilityType });
+        if (existing) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Facility already exists';
+          return responseData;
+        }
 
-          if (existing) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Facility already exists';
-            return responseData;
-          }
+        const facilityData = {
+          name,
+          facilityType,
+          capacity: parseInt(capacity, 10),
+          status: status || FacilityStatus.AVAILABLE,
+          image: imageUrl
+        };
 
-          const facilityData = {
-            name: name.trim(),
-            facilityType: facilityType.trim(),
-            capacity: parseInt(capacity, 10),
-            ratePerPerson: parseFloat(ratePerPerson) || 0,
-            status: status || FacilityStatus.AVAILABLE,
-            image: imageUrl 
-          };
+        if (facilityType === FacilityType.CONFERENCE) {
+          facilityData.price = parseFloat(price) || 0;
+        }
+        if (facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) {
+          facilityData.ratePerPerson = parseFloat(ratePerPerson) || 0;
+        }
 
-          const facility = await dbHelper.create('facility', facilityData);
+        const facility = await dbHelper.create('facility', facilityData);
 
-          responseData.status = Status.CREATED;
-          responseData.error = null;
-          responseData.message = 'Facility added successfully';
-          responseData.facilityId = facility._id.toString();
+        responseData.status = Status.CREATED;
+        responseData.error = null;
+        responseData.message = 'Facility added successfully';
+        responseData.facilityId = facility._id.toString();
       } catch (error) {
-          console.error('Error adding facility:', error);
-          responseData.error = error.message;
+        console.error('Error adding facility:', error);
+        responseData.error = error.message;
       }
       return responseData;
-  },
+    },
 
   /**
    * Fetches all facilities.
@@ -224,7 +233,7 @@ const facilityModule = {
 
       if (user.role !== UserRole.CRMSTEAM && user.role !== UserRole.SUPERINTENDENT) {
         responseData.status = Status.FORBIDDEN;
-        responseData.error = 'Only CRMS team  and Superintendent can edit a facility';
+        responseData.error = 'Only CRMS team and Superintendent can edit a facility';
         return responseData;
       }
 
@@ -236,15 +245,18 @@ const facilityModule = {
       }
 
       const updateData = {};
-      if (isPresent(data.name)) updateData.name = data.name.trim();
+
+      if (isPresent(data.name)) updateData.name = updateData.name = typeof data.name === 'string' ? data.name.trim() : '';
       if (isPresent(data.facilityType)) {
-        if (!isValidFacilityType(data.facilityType)) {
-          responseData.status = Status.BAD_REQUEST;
-          responseData.error = 'Invalid facility type';
-          return responseData;
-        }
-        updateData.facilityType = data.facilityType.trim();
+      const typeToCheck = typeof data.facilityType === 'string' ? data.facilityType.trim() : '';
+      if (!isValidFacilityType(typeToCheck)) {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Invalid facility type';
+        return responseData;
       }
+      updateData.facilityType = typeToCheck;
+    }
+
       if (isPresent(data.capacity)) {
         if (!isValidCapacity(data.capacity)) {
           responseData.status = Status.BAD_REQUEST;
@@ -253,14 +265,34 @@ const facilityModule = {
         }
         updateData.capacity = parseInt(data.capacity, 10);
       }
-      if (isPresent(data.ratePerPerson)) {
+
+      if (
+        (data.facilityType === FacilityType.CONFERENCE || facility.facilityType === FacilityType.CONFERENCE) &&
+        isPresent(data.price)
+      ) {
+        if (!isValidRate(data.price)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid price for conference facility';
+          return responseData;
+        }
+        updateData.price = parseFloat(data.price) || 0;
+        updateData.ratePerPerson = undefined;
+      }
+
+      if (
+        ((data.facilityType === FacilityType.DORMITORY || data.facilityType === FacilityType.COTTAGE) ||
+          (facility.facilityType === FacilityType.DORMITORY || facility.facilityType === FacilityType.COTTAGE)) &&
+        isPresent(data.ratePerPerson)
+      ) {
         if (!isValidRate(data.ratePerPerson)) {
           responseData.status = Status.BAD_REQUEST;
-          responseData.error = 'Invalid rate per person';
+          responseData.error = 'Invalid rate per person for dormitory/cottage facility';
           return responseData;
         }
         updateData.ratePerPerson = parseFloat(data.ratePerPerson) || 0;
+        updateData.price = undefined;
       }
+
       if (isPresent(data.status)) {
         if (!isValidFacilityStatus(data.status)) {
           responseData.status = Status.BAD_REQUEST;
@@ -277,7 +309,6 @@ const facilityModule = {
           responseData.error = imageError;
           return responseData;
         }
-        
         try {
           const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
           const blob = bucket.file(filename);
@@ -310,8 +341,17 @@ const facilityModule = {
         }
       }
 
+      if (data.facilityType && data.facilityType === FacilityType.CONFERENCE) {
+        updateData.ratePerPerson = undefined;
+      }
+      if (data.facilityType && (data.facilityType === FacilityType.DORMITORY || data.facilityType === FacilityType.COTTAGE)) {
+        updateData.price = undefined;
+      }
+
+      Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
       await dbHelper.updateOne('facility', { _id: id }, { $set: updateData });
-    
+
       responseData.status = Status.OK;
       responseData.error = null;
       responseData.message = 'Facility updated successfully';
@@ -398,6 +438,8 @@ const facilityModule = {
       facilities: []
     };
 
+    facilityType = typeof facilityType === 'string' ? facilityType.trim() : '';
+
     if (!isPresent(facilityType)) {
       responseData.status = Status.BAD_REQUEST;
       responseData.error = 'Missing facility type';
@@ -411,7 +453,11 @@ const facilityModule = {
     }
 
     try {
-      const facilities = await dbHelper.find('facility', { facilityType: facilityType.trim() }, { __v: 0, createdAt: 0 });
+      const facilities = await dbHelper.find(
+        'facility',
+        { facilityType: facilityType },
+        { _id: 1, name: 1, capacity: 1, ratePerPerson: 1, price: 1 }
+      );
 
       responseData.status = Status.OK;
       responseData.error = null;

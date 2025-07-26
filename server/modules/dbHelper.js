@@ -74,7 +74,8 @@ const dbHelper = {
         name: { type: String, required: true, unique: true },
         facilityType: { type: String, enum: Object.values(FacilityType), required: true },
         capacity: { type: Number, required: true },
-        ratePerPerson: { type: Number, required: false },
+        ratePerPerson: { type: Number, required: true },
+        price: { type: Number, required: true },
         status: { type: String, enum: Object.values(FacilityStatus), default: FacilityStatus.AVAILABLE, required: true },
         image: { type: String, required: true },
         createdAt: { type: Date, default: Date.now }

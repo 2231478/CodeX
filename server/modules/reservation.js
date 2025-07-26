@@ -1,4 +1,5 @@
 import { Category, GuestType, Status, UserRole, FacilityStatus, ServiceType, ReservationStatus } from '../constants.js';
+import notificationModule from './notification.js';
 import { Storage } from '@google-cloud/storage';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -252,28 +253,12 @@ const reservationModule = {
 
       const reservation = await dbHelper.create('reservation', reservationData);
 
-      const notification = {
+      await notificationModule.createAndNotifyUser(dbHelper, {
         title: "Congratulations, Camper! Confirmation Successful — your reservation is now confirmed. We can't wait to welcome you!",
         message: `Thank you for choosing Teachers' Camp! Your reservation has been confirmed. We're excited to welcome you and ensure you have a comfortable and memorable stay.`,
-        isRead: false,
         userId: user.userId,
-        reservationId: reservation._id,
-        createdAt: new Date()
-      };
-
-      await dbHelper.create('notification', notification);
-
-      const userWs = userSocketMap.get(user.userId);
-      if (userWs && userWs.readyState === 1) {
-        userWs.send(JSON.stringify({
-          type: 'notification',
-          notification: {
-            title: notification.title,
-            message: notification.message,
-            createdAt: notification.createdAt,
-          }
-        }));
-      }
+        reservationId: reservation._id
+      }, userSocketMap);
 
       const reservationObject = reservation.toObject();
       delete reservationObject.letterOfIntentUrl;
