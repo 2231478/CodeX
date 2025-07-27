@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import styles from './ServiceDetail.module.css';
 import placeholderImage from '../../assets/conference.jpg';
+
+//placeholder for authentication logic
+const useAuth = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // CHANGE THIS BOOLEAN TO TEST SCENARIOS
+    return { isLoggedIn };
+};
 
 const allServiceData = {
   dormitories: [
@@ -49,6 +55,8 @@ const allServiceData = {
 function MainServicesServiceDetail() {
   const { type, id } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuth(); 
 
   const currentService = allServiceData[type]?.find(service => service.id === parseInt(id));
 
@@ -123,6 +131,14 @@ function MainServicesServiceDetail() {
     }
   };
 
+  const onReserveNow = () => {
+    if (isLoggedIn) {
+      navigate(`/reservation-form/${type}/${currentService.id}`);
+    } else {
+      navigate('/auth/login'); 
+    }
+  };
+
   return (
     <section className={styles.serviceDetailSection}>
       <h2 className={styles.sectionTitle}>
@@ -135,7 +151,9 @@ function MainServicesServiceDetail() {
           <h3 className={styles.detailName}>{currentService.name}</h3>
           <p className={styles.detailCapacity}>Capacity: {currentService.capacity}</p>
           <p className={styles.detailRate}>{getPriceLabel()} : ₱ {currentService.rate || currentService.price}</p>
-          <button className={styles.reserveButton}>Reserve Now!</button>
+          <button className={styles.reserveButton} onClick={onReserveNow}>
+            Reserve Now!
+          </button>
           <Link to={`/services/${type}`} className={styles.backButton}>
             Back to {type.charAt(0).toUpperCase() + type.slice(1)}
           </Link>
@@ -149,9 +167,11 @@ function MainServicesServiceDetail() {
             <span className={styles.navArrow} onClick={handleNextMonth}>&gt;</span>
           </div>
           <div className={styles.calendarGrid}>
+            {/* Day Headers */}
             {calendarData.daysOfWeek.map(day => (
               <div key={day} className={styles.calendarDayHeader}>{day}</div>
             ))}
+            {/* Dates */}
             {calendarData.calendarDaysGrid.map((date, index) => {
               const isToday = date &&
                   date === new Date().getDate() &&
