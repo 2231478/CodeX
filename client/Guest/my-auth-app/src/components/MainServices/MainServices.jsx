@@ -1,9 +1,8 @@
 import React from 'react';
-import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
 import Navbar from '../Header/Header';
 import Footer from '../Footer/Footer';
 import styles from './MainServices.module.css';
-
 import MainServicesHeader from './Header';
 import MainServicesNavSearch from './NavSearch';
 import MainServicesDormitories from './Dormitories';
@@ -14,11 +13,14 @@ import MainServicesOtherService from './OtherService';
 
 function MainServices() {
   const navigate = useNavigate();
+  const location = useLocation(); 
 
   const handleReserveNow = () => {
     console.log("Reserve Now clicked from MainServices page!");
     navigate('/auth/login');
   };
+
+  const isOtherServiceTab = location.pathname.includes('/otherservice');
 
   return (
     <div className={styles.mainServicesPageContainer}>
@@ -37,7 +39,7 @@ function MainServices() {
             <Route path="otherservice" element={<MainServicesOtherService />} />
           </Routes>
 
-          <MainServicesRates />
+          {!isOtherServiceTab && <MainServicesRates />}
         </div>
       </main>
 

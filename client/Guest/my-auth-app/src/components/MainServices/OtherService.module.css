@@ -41,9 +41,6 @@
   text-align: right;
 }
 
-.servicesList {
-}
-
 .serviceItem {
   display: flex;
   justify-content: space-between;
