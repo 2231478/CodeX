@@ -10,17 +10,23 @@ import MainServicesCottages from './Cottages';
 import MainServicesRates from './ServicesRates';
 import MainServicesConference from './Conference';
 import MainServicesOtherService from './OtherService';
+import MainServicesServiceDetail from './ServiceDetail';
+
 
 function MainServices() {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
 
   const handleReserveNow = () => {
     console.log("Reserve Now clicked from MainServices page!");
     navigate('/auth/login');
   };
 
-  const isOtherServiceTab = location.pathname.includes('/otherservice');
+  const isDetailViewOrOtherService = 
+    (location.pathname.includes('/dormitories/') && location.pathname.split('/').length > 3) ||
+    (location.pathname.includes('/cottages/') && location.pathname.split('/').length > 3) ||
+    (location.pathname.includes('/conference/') && location.pathname.split('/').length > 3) ||
+    location.pathname.includes('/otherservice');
 
   return (
     <div className={styles.mainServicesPageContainer}>
@@ -37,9 +43,11 @@ function MainServices() {
             <Route path="cottages" element={<MainServicesCottages />} />
             <Route path="conference" element={<MainServicesConference />} />
             <Route path="otherservice" element={<MainServicesOtherService />} />
+
+            <Route path=":type/:id" element={<MainServicesServiceDetail />} />
           </Routes>
 
-          {!isOtherServiceTab && <MainServicesRates />}
+          {!isDetailViewOrOtherService && <MainServicesRates />}
         </div>
       </main>
 

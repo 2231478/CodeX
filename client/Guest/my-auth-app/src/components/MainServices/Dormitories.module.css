@@ -77,6 +77,8 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
   align-self: center;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .checkButton:hover {
