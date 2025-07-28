@@ -7,6 +7,11 @@ import ForgotPasswordForm from './components/ForgotPasswordForm/ForgotPasswordFo
 import Terms from './components/Terms/Terms';
 import LandingPage from './components/LandingPage/LandingPage';
 import MainServices from './components/MainServices/MainServices';
+import Homepage from './components/Homepage/Homepage';
+import HistoryPage from './components/History/History'; 
+// import ServicesPage from './components/MainServices/MainServices';
+// import FAQsPage from './components/FAQs/FAQs';
+// import ContactsPage from './components/Contacts/Contacts';
 
 import backgroundImage from './assets/background-blur.png';
 import styles from './App.module.css';
@@ -67,6 +72,11 @@ function App() {
       <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
       <Route path="/auth/*" element={<AuthLayout />} />
       <Route path="/services/*" element={<MainServices />} />
+      <Route path="/homepage/*" element={<Homepage />} />
+      <Route path="/history" element={<HistoryPage />} />
+      {/* <Route path="/services" element={<ServicesPage />} />
+      <Route path="/faqs" element={<FAQsPage />} />
+      <Route path="/contacts" element={<ContactsPage />} /> */}
     </Routes>
   );
 }

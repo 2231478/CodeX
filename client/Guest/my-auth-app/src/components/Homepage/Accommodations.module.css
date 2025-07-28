@@ -1,0 +1,139 @@
+.accommodationsSection {
+  padding: 30px 40px;
+  background-color: #f5f5f5;
+  text-align: center;
+}
+
+.sectionTitle {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #1e3c24;
+  letter-spacing: 0.15em;
+  margin-bottom: 50px;
+  text-transform: uppercase;
+}
+
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  max-width: 1100px;
+  margin: 0 auto 80px auto;
+}
+
+.accommodationCard {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cardImagePlaceholder {
+  width: 100%;
+  padding-top: 100%;
+  background-color: #ccc;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.cardTitle {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #1e3c24;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.cardPrice {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 0;
+}
+
+.bottomContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+  margin-bottom: 60px;
+}
+
+.bottomText p {
+  font-size: 1.2em;
+  color: #1e3c24;
+  margin: 0;
+  text-align: left;
+}
+
+.bottomText p:first-child {
+  font-weight: bold;
+}
+
+.exploreMoreButton {
+  background-color: #1e3c24;
+  color: #F5F5F5;
+  border: none;
+  border-radius: 25px;
+  padding: 20px 40px;
+  font-size: 1.4em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.exploreMoreButton:hover {
+  background-color: #538E5E;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 992px) {
+  .cardsContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sectionTitle {
+    font-size: 2em;
+  }
+
+  .bottomContent {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .bottomText p {
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .accommodationsSection {
+    padding: 60px 20px;
+  }
+  .sectionTitle {
+    font-size: 1.8em;
+  }
+}
+
+@media (max-width: 576px) {
+  .cardsContainer {
+    grid-template-columns: 1fr;
+  }
+  .sectionTitle {
+    font-size: 1.5em;
+    margin-bottom: 40px;
+  }
+  .bottomText p {
+    font-size: 1em;
+  }
+  .exploreMoreButton {
+    padding: 10px 25px;
+    font-size: 1em;
+  }
+}
