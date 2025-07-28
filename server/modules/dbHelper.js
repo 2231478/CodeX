@@ -73,11 +73,11 @@ const dbHelper = {
       const FacilitySchema = new mongoose.Schema({
         name: { type: String, required: true, unique: true },
         facilityType: { type: String, enum: Object.values(FacilityType), required: true },
-        capacity: { type: Number, required: true },
-        ratePerPerson: { type: Number, required: true },
-        price: { type: Number, required: true },
+        capacity: { type: Number, required: false },
+        ratePerPerson: { type: Number, required: false },
+        price: { type: Number, required: false },
         status: { type: String, enum: Object.values(FacilityStatus), default: FacilityStatus.AVAILABLE, required: true },
-        image: { type: String, required: true },
+        image: { type: String, required: false },
         createdAt: { type: Date, default: Date.now }
       });
 

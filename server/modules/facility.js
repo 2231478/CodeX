@@ -23,14 +23,14 @@ const facilityModule = {
 
       try {
         let { name, facilityType, capacity, ratePerPerson, price, status } = data;
-        name = typeof name === 'string' ? name.trim() : '';
-        facilityType = typeof facilityType === 'string' ? facilityType.trim() : '';
+        name = typeof name === 'string' ? name.trim().toUpperCase() : '';
+        facilityType = typeof facilityType === 'string' ? facilityType.trim().toUpperCase() : '';
+        status = status || FacilityStatus.AVAILABLE;
 
         if (
           !isPresent(name) ||
           !isPresent(facilityType) ||
-          !isPresent(capacity) ||
-          !file ||
+          // !file ||
           (facilityType === FacilityType.CONFERENCE && !isPresent(price)) ||
           ((facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) && !isPresent(ratePerPerson))
         ) {
@@ -51,12 +51,35 @@ const facilityModule = {
           return responseData;
         }
 
-        const imageError = isValidImage(file);
-        if (imageError) {
-          responseData.status = Status.BAD_REQUEST;
-          responseData.error = imageError;
-          return responseData;
+        let imageUrl = null;
+
+        if (file) {
+          const imageError = isValidImage(file);
+          if (imageError) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = imageError;
+            return responseData;
+          }
+          try {
+            const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
+            const blob = bucket.file(filename);
+            await new Promise((resolve, reject) => {
+              const stream = blob.createWriteStream({
+                resumable: false,
+                contentType: file.mimetype,
+              });
+              stream.on('error', reject);
+              stream.on('finish', resolve);
+              stream.end(file.buffer);
+            });
+            imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+          } catch (err) {
+            responseData.status = Status.INTERNAL_SERVER_ERROR;
+            responseData.error = 'Image upload failed: ' + err.message;
+            return responseData;
+          }
         }
+
 
         if (!isValidFacilityType(facilityType)) {
           responseData.status = Status.BAD_REQUEST;
@@ -84,26 +107,6 @@ const facilityModule = {
           responseData.error = 'Invalid facility status';
           return responseData;
         }
-
-        let imageUrl;
-        try {
-          const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
-          const blob = bucket.file(filename);
-          await new Promise((resolve, reject) => {
-            const stream = blob.createWriteStream({
-              resumable: false,
-              contentType: file.mimetype,
-            });
-            stream.on('error', reject);
-            stream.on('finish', resolve);
-            stream.end(file.buffer);
-          });
-          imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        } catch (err) {
-          responseData.status = Status.INTERNAL_SERVER_ERROR;
-          responseData.error = 'Image upload failed: ' + err.message;
-          return responseData;
-        }
         
         const existing = await dbHelper.findOne('facility', { name, facilityType });
         if (existing) {
@@ -115,16 +118,22 @@ const facilityModule = {
         const facilityData = {
           name,
           facilityType,
-          capacity: parseInt(capacity, 10),
-          status: status || FacilityStatus.AVAILABLE,
-          image: imageUrl
+          capacity: parseInt(String(capacity).replace(/,/g, ''), 10),
+          status
         };
 
+        if (imageUrl) {
+          facilityData.image = imageUrl;
+        }
+
         if (facilityType === FacilityType.CONFERENCE) {
-          facilityData.price = parseFloat(price) || 0;
+          facilityData.price = Number(String(price).replace(/,/g, '')) || 0;
+
         }
         if (facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) {
-          facilityData.ratePerPerson = parseFloat(ratePerPerson) || 0;
+          
+          facilityData.ratePerPerson = Number(String(price).replace(/,/g, '')) || 0;
+
         }
 
         const facility = await dbHelper.create('facility', facilityData);
@@ -246,9 +255,9 @@ const facilityModule = {
 
       const updateData = {};
 
-      if (isPresent(data.name)) updateData.name = updateData.name = typeof data.name === 'string' ? data.name.trim() : '';
+      if (isPresent(data.name)) updateData.name = updateData.name = typeof data.name === 'string' ? data.name.trim().toUpperCase() : '';
       if (isPresent(data.facilityType)) {
-      const typeToCheck = typeof data.facilityType === 'string' ? data.facilityType.trim() : '';
+      const typeToCheck = typeof data.facilityType === 'string' ? data.facilityType.trim().toUpperCase() : '';
       if (!isValidFacilityType(typeToCheck)) {
         responseData.status = Status.BAD_REQUEST;
         responseData.error = 'Invalid facility type';
@@ -263,19 +272,20 @@ const facilityModule = {
           responseData.error = 'Invalid capacity';
           return responseData;
         }
-        updateData.capacity = parseInt(data.capacity, 10);
+        updateData.capacity = parseInt(String(data.capacity).replace(/,/g, ''), 10);
       }
 
       if (
         (data.facilityType === FacilityType.CONFERENCE || facility.facilityType === FacilityType.CONFERENCE) &&
         isPresent(data.price)
       ) {
-        if (!isValidRate(data.price)) {
+        const priceNum = Number(String(data.price).replace(/,/g, ''));
+        if (!isValidRate(priceNum)) {
           responseData.status = Status.BAD_REQUEST;
           responseData.error = 'Invalid price for conference facility';
           return responseData;
         }
-        updateData.price = parseFloat(data.price) || 0;
+        updateData.price = priceNum;
         updateData.ratePerPerson = undefined;
       }
 
@@ -284,12 +294,13 @@ const facilityModule = {
           (facility.facilityType === FacilityType.DORMITORY || facility.facilityType === FacilityType.COTTAGE)) &&
         isPresent(data.ratePerPerson)
       ) {
-        if (!isValidRate(data.ratePerPerson)) {
+        const rateNum = Number(String(data.ratePerPerson).replace(/,/g, ''));
+        if (!isValidRate(rateNum)) {
           responseData.status = Status.BAD_REQUEST;
           responseData.error = 'Invalid rate per person for dormitory/cottage facility';
           return responseData;
         }
-        updateData.ratePerPerson = parseFloat(data.ratePerPerson) || 0;
+        updateData.ratePerPerson = rateNum;
         updateData.price = undefined;
       }
 
@@ -438,7 +449,7 @@ const facilityModule = {
       facilities: []
     };
 
-    facilityType = typeof facilityType === 'string' ? facilityType.trim() : '';
+    facilityType = typeof facilityType === 'string' ? facilityType.trim().toUpperCase() : '';
 
     if (!isPresent(facilityType)) {
       responseData.status = Status.BAD_REQUEST;
@@ -456,12 +467,21 @@ const facilityModule = {
       const facilities = await dbHelper.find(
         'facility',
         { facilityType: facilityType },
-        { _id: 1, name: 1, capacity: 1, ratePerPerson: 1, price: 1 }
+        { status: 0, __v: 0, createdAt: 0 }
       );
+
+      const facilitiesObject = facilities.map(facility => ({
+        id: facility._id.toString(),
+        name: facility.name,
+        capacity: facility.capacity,
+        ratePerPerson: facility.ratePerPerson,
+        price: facility.price,
+        image: facility.image
+      }));
 
       responseData.status = Status.OK;
       responseData.error = null;
-      responseData.facilities = facilities;
+      responseData.facilities = facilitiesObject;
     } catch (error) {
       console.error('Error fetching facilities by type:', error);
       responseData.error = error.message;
@@ -588,8 +608,11 @@ function isValidFacilityStatus(status) {
 }
 
 function isValidCapacity(cap) {
-  return /^\d+$/.test(cap) && parseInt(cap) > 0;
+  if (typeof cap !== 'string' && typeof cap !== 'number') return false;
+  const normalized = String(cap).replace(/,/g, '');
+  return /^\d+$/.test(normalized) && parseInt(normalized, 10) > 0;
 }
+
 function isValidRate(rate) {
   const parsedRate = parseFloat(rate);
   return !isNaN(parsedRate) && parsedRate >= 0;
