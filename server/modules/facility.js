@@ -568,13 +568,8 @@ const facilityModule = {
     return responseData;
   },
 
-  /**
-   * Searches for facilities by name.
-   * @param {Object} dbHelper - The database helper for database operations.
-   * @param {string} query - The search query.
-   * @returns {Object} Response data with status, error, and facilities on success.
-   */
-  searchFacilities: async (dbHelper, query) => {
+  searchFacilities: async (dbHelper, options = {}) => {
+    const {type, query, minPrice, maxPrice, capacity, checkInDate, checkOutDate} = options;
     const responseData = {
       status: Status.INTERNAL_SERVER_ERROR,
       error: 'Error searching facilities',
@@ -582,58 +577,41 @@ const facilityModule = {
     };
 
     try {
-      if (!query || typeof query !== 'string' || query.trim() === '') {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Search query must be a non-empty string';
-        return responseData;
+      let filter = {};
+      if (type) filter.facilityType = type.trim().toUpperCase();
+      if (query) filter.name = new RegExp(query.trim(), 'i');
+      if (capacity) filter.capacity = { $gte: Number(capacity) };
+
+      if (minPrice || maxPrice) {
+        filter.$or = [];
+        if (minPrice) {
+          filter.$or.push({ price: { $gte: Number(minPrice) } });
+          filter.$or.push({ ratePerPerson: { $gte: Number(minPrice) } });
+        }
+        if (maxPrice) {
+          filter.$or.push({ price: { $lte: Number(maxPrice) } });
+          filter.$or.push({ ratePerPerson: { $lte: Number(maxPrice) } });
+        }
       }
 
-      const searchRegex = new RegExp(query.trim(), 'i');
-      const facilities = await dbHelper.find('facility', { name: searchRegex }, { __v: 0, createdAt: 0 });
+      if (checkInDate && checkOutDate) {
+      const overlappingReservations = await dbHelper.find('reservation', {
+        $or: [
+          {
+            dateOfArrival: { $lte: new Date(checkOutDate) },
+            dateOfDeparture: { $gte: new Date(checkInDate) }
+          }
+        ]
+      }, { facility: 1 });
 
-      responseData.status = Status.OK;
-      responseData.error = null;
-      responseData.facilities = facilities;
-    } catch (error) {
-      console.error('Error searching facilities:', error);
-      responseData.error = error.message;
+      const excludeFacilityIds = overlappingReservations.map(r => r.facility?.toString()).filter(Boolean);
+
+      if (excludeFacilityIds.length > 0) {
+        filter._id = { $nin: excludeFacilityIds };
+      }
     }
-    return responseData;
-  },
 
-  /**
-   * Searches for facilities by name (partial match) and type.
-   * @param {Object} dbHelper - The database helper for database operations.
-   * @param {string} facilityType - The facility type to filter by.
-   * @param {string} query - The search query.
-   * @returns {Object} Response data with status, error, and facilities on success.
-   */
-  searchFacilitiesByType: async (dbHelper, facilityType, query) => {
-    const responseData = {
-      status: Status.INTERNAL_SERVER_ERROR,
-      error: 'Error searching facilities',
-      facilities: []
-    };
-
-    try {
-      if (!query || typeof query !== 'string' || query.trim() === '') {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Search query must be a non-empty string';
-        return responseData;
-      }
-      if (!facilityType || typeof facilityType !== 'string') {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Facility type is required';
-        return responseData;
-      }
-      const typeUpper = facilityType.trim().toUpperCase();
-
-      const searchRegex = new RegExp(query.trim(), 'i');
-      const facilities = await dbHelper.find(
-        'facility',
-        { name: searchRegex, facilityType: typeUpper },
-        { __v: 0, createdAt: 0 }
-      );
+      const facilities = await dbHelper.find('facility', filter, { __v: 0, createdAt: 0 });
 
       responseData.status = Status.OK;
       responseData.error = null;

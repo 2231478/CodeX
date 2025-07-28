@@ -22,7 +22,7 @@ import { Link } from 'react-router-dom';
 //   { id: 15, name: 'HERNANDEZ', capacity: '20 pax', rate: '375' },
 // ];
 
-function MainServicesDormitories({ facilities, loading }) {
+function MainServicesDormitories({ facilities, loading, searchAttempted }) {
   const [defaultDorms, setDefaultDorms] = useState([]);
   const [fetchingDefault, setFetchingDefault] = useState(false);
 
@@ -45,7 +45,6 @@ function MainServicesDormitories({ facilities, loading }) {
             }
           });
       }
-      // If searching, clear defaults
       else {
         setDefaultDorms([]);
         setFetchingDefault(false);
@@ -53,10 +52,13 @@ function MainServicesDormitories({ facilities, loading }) {
       return () => { ignore = true; };
     }, [facilities]);
 
-    const isLoading = loading || fetchingDefault;
-    // Choose what to display: searched data or default data
-    const displayDorms = (facilities && facilities.length > 0) ? facilities : defaultDorms;
+  const isLoading = loading || fetchingDefault;
+  const displayDorms = (facilities && facilities.length > 0) ? facilities : defaultDorms;
 
+  const showNoResult =
+  !isLoading &&
+  searchAttempted &&           
+  facilities && facilities.length === 0;
 
   return (
     <section className={styles.dormitoriesSection}>
@@ -64,7 +66,7 @@ function MainServicesDormitories({ facilities, loading }) {
 
       <div className={styles.dormitoryGrid}>
         {isLoading && <p>Loading...</p>}
-        {!isLoading && displayDorms.length === 0 && (
+        {showNoResult && (
           <div className={styles.noFacilities}>
             <div className={styles.softCard}>
               <p>No dormitories found.</p>
@@ -72,7 +74,7 @@ function MainServicesDormitories({ facilities, loading }) {
           </div>
         )}
 
-        {!isLoading && displayDorms.map((dorm) => (
+        {!isLoading && !showNoResult && displayDorms.map((dorm) => (
           <div key={dorm.id} className={styles.dormitoryCard}>
             <div className={styles.dormitoryImagePlaceholder} style={{ backgroundImage: `url(${dormitoryPlaceholder})` }}>
             </div>

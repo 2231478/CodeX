@@ -16,6 +16,7 @@ import MainServicesServiceDetail from './ServiceDetail';
 function MainServices() {
   const [facilities, setFacilities] = useState([]);     
   const [loading, setLoading] = useState(false); 
+  const [searchAttempted, setSearchAttempted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -32,6 +33,7 @@ function MainServices() {
   const handleSearch = async (query) => {
     if (!query.trim() || !facilityType) return;
     setLoading(true);
+    setSearchAttempted(true);
     try {
       const res = await fetch(
         `/api/facility/search-facilities?type=${encodeURIComponent(facilityType)}&query=${encodeURIComponent(query)}`
@@ -48,7 +50,41 @@ function MainServices() {
     setLoading(false);
   };
 
-  const handleClearSearch = () => setFacilities([]);
+  const handleClearSearch = () => {
+    setFacilities([]);
+    setSearchAttempted(false); 
+  };
+
+  const handleApplyFilters = async (filters) => {
+    setLoading(true);
+    setSearchAttempted(true);
+    try {
+      const params = new URLSearchParams({
+        type: facilityType,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        capacity: filters.capacity,
+        checkInDate: filters.checkInDate,
+        checkOutDate: filters.checkOutDate
+      });
+
+      for (const [key, value] of params.entries()) {
+        if (!value) params.delete(key);
+      }
+
+      const res = await fetch(`/api/facility/search-facilities?${params.toString()}`);
+      const data = await res.json();
+      if (data.status === 200) {
+        setFacilities(data.facilities || []);
+      } else {
+        setFacilities([]);
+      }
+    } catch {
+      setFacilities([]);
+    }
+    setLoading(false);
+  };
+
 
   const handleReserveNow = () => {
     console.log("Reserve Now clicked from MainServices page!");
@@ -68,14 +104,14 @@ function MainServices() {
       <main className={styles.mainContent}>
         <MainServicesHeader />
         <div className={styles.contentWrapper}>
-          <MainServicesNavSearch onSearch={handleSearch} onClearSearch={handleClearSearch}/>
+          <MainServicesNavSearch onSearch={handleSearch} onClearSearch={handleClearSearch} onApplyFilters={handleApplyFilters} />
 
           <Routes>
             <Route path="/" element={<Navigate to="dormitories" replace />} />
-            <Route path="dormitories" element={<MainServicesDormitories facilities={facilities} loading={loading} />} />
-            <Route path="cottages" element={<MainServicesCottages facilities={facilities} loading={loading}/>} />
-            <Route path="conference" element={<MainServicesConference facilities={facilities} loading={loading}/>} />
-            <Route path="otherservice" element={<MainServicesOtherService facilities={facilities} loading={loading}/>} />
+            <Route path="dormitories" element={<MainServicesDormitories facilities={facilities} loading={loading} searchAttempted={searchAttempted}/>} />
+            <Route path="cottages" element={<MainServicesCottages facilities={facilities} loading={loading} searchAttempted={searchAttempted}/>} />
+            <Route path="conference" element={<MainServicesConference facilities={facilities} loading={loading} searchAttempted={searchAttempted}/>} />
+            <Route path="otherservice" element={<MainServicesOtherService facilities={facilities} loading={loading} searchAttempted={searchAttempted}/>} />
 
             <Route path=":type/:id" element={<MainServicesServiceDetail />} />
           </Routes>

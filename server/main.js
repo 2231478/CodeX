@@ -103,16 +103,9 @@ const processGetAPI = async (req, res) => {
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'search-facilities': {
-                  const { type, query } = req.query;
-                  if (type && query) {
-                    let responseData = await facilityModule.searchFacilitiesByType(dbHelper, type, query);
-                    return res.status(responseData.status).json(responseData);
-                  }
-                  if (query) {
-                    let responseData = await facilityModule.searchFacilities(dbHelper, query);
-                    return res.status(responseData.status).json(responseData);
-                  }
-                  return res.status(400).json({ status: 400, error: 'Missing search parameters' });
+                  const params = { ...req.query };
+                  let responseData = await facilityModule.searchFacilities(dbHelper, params);
+                  return res.status(responseData.status).json(responseData);
                 }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './NavSearch.module.css';
 
-function MainServicesNavSearch({ onSearch, onClearSearch }) {
+function MainServicesNavSearch({ onSearch, onClearSearch, onApplyFilters }) {
   const [searchValue, setSearchValue] = useState('');
   const location = useLocation();
   const basePath = '/services';
@@ -40,15 +40,14 @@ function MainServicesNavSearch({ onSearch, onClearSearch }) {
 
   // Function to handle filter application
   const handleApplyFilters = () => {
-    console.log('Applying Filters:');
-    console.log('Min Price:', minPrice);
-    console.log('Max Price:', maxPrice);
-    console.log('Capacity:', capacity);
-    console.log('Check-in Date:', checkInDate);
-    console.log('Check-out Date:', checkOutDate);
-    // TODO: pass these values up to a parent component
-    // or use them to construct URL query parameters for filtering the service list.
-
+    onApplyFilters({
+      minPrice,
+      maxPrice,
+      capacity,
+      checkInDate,
+      checkOutDate
+    });
+    
     closeFilterOverlay();
   };
 
