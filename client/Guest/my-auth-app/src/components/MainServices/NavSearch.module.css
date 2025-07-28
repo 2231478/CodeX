@@ -74,10 +74,12 @@
 
 .filterInput[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .filterInput[type="number"]::-webkit-outer-spin-button,
 .filterInput[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -182,10 +184,12 @@
 .overlayInput[type="date"],
 .overlayInput[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .overlayInput[type="number"]::-webkit-outer-spin-button,
 .overlayInput[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
