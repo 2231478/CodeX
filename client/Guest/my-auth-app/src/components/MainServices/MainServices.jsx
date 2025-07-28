@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
 import Navbar from '../Header/Header';
 import Footer from '../Footer/Footer';
@@ -14,8 +14,41 @@ import MainServicesServiceDetail from './ServiceDetail';
 
 
 function MainServices() {
+  const [facilities, setFacilities] = useState([]);     
+  const [loading, setLoading] = useState(false); 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const getFacilityTypeFromPath = (pathname) => {
+    if (pathname.includes('/dormitories')) return 'DORMITORY';
+    if (pathname.includes('/cottages')) return 'COTTAGE';
+    if (pathname.includes('/conference')) return 'CONFERENCE';
+    if (pathname.includes('/otherservice')) return 'OTHER SERVICE';
+    return '';
+  };
+
+  const facilityType = getFacilityTypeFromPath(location.pathname);
+
+  const handleSearch = async (query) => {
+    if (!query.trim() || !facilityType) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/facility/search-facilities?type=${encodeURIComponent(facilityType)}&query=${encodeURIComponent(query)}`
+      );
+      const data = await res.json();
+      if (data.status === 200) {
+        setFacilities(data.facilities || []);
+      } else {
+        setFacilities([]);
+      }
+    } catch {
+      setFacilities([]);
+    }
+    setLoading(false);
+  };
+
+  const handleClearSearch = () => setFacilities([]);
 
   const handleReserveNow = () => {
     console.log("Reserve Now clicked from MainServices page!");
@@ -35,14 +68,14 @@ function MainServices() {
       <main className={styles.mainContent}>
         <MainServicesHeader />
         <div className={styles.contentWrapper}>
-          <MainServicesNavSearch />
+          <MainServicesNavSearch onSearch={handleSearch} onClearSearch={handleClearSearch}/>
 
           <Routes>
             <Route path="/" element={<Navigate to="dormitories" replace />} />
-            <Route path="dormitories" element={<MainServicesDormitories />} />
-            <Route path="cottages" element={<MainServicesCottages />} />
-            <Route path="conference" element={<MainServicesConference />} />
-            <Route path="otherservice" element={<MainServicesOtherService />} />
+            <Route path="dormitories" element={<MainServicesDormitories facilities={facilities} loading={loading} />} />
+            <Route path="cottages" element={<MainServicesCottages facilities={facilities} loading={loading}/>} />
+            <Route path="conference" element={<MainServicesConference facilities={facilities} loading={loading}/>} />
+            <Route path="otherservice" element={<MainServicesOtherService facilities={facilities} loading={loading}/>} />
 
             <Route path=":type/:id" element={<MainServicesServiceDetail />} />
           </Routes>

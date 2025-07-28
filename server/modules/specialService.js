@@ -17,6 +17,9 @@ const specialServiceModule = {
 
     try {
       let { name, price, unit } = data;
+      name = name.trim();
+      price = Number(String(price).replace(/,/g, '')) || 0;
+      unit = unit.trim();
 
       if (!isPresent(name) || !isPresent(price) || !isPresent(unit)) {
         responseData.status = Status.BAD_REQUEST;
@@ -41,10 +44,6 @@ const specialServiceModule = {
         responseData.error = 'Only CRMS team and Superintendent can add a special service';
         return responseData;
       }
-
-      name = name.trim();
-      price = parseFloat(price);
-      unit = unit.trim();
 
       const existing = await dbHelper.findOne('specialservice', {
             name,
@@ -190,7 +189,7 @@ const specialServiceModule = {
           responseData.error = 'Invalid price value';
           return responseData;
         }
-        updateData.price = parseFloat(data.price);
+        updateData.price = Number(String(data.price).replace(/,/g, '')) || 0;
         }
         if (isPresent(data.unit)) updateData.unit = data.unit.trim();
 
@@ -273,16 +272,17 @@ function isPresent(value) {
 }
 
 function isValidPrice(price) {
-  if (isNaN(Number(price)) || Number(price) < 0) {
+  const normalized = String(price).replace(/,/g, '');
+  if (isNaN(Number(normalized)) || Number(normalized) < 0) {
     return false;
   }
-  const priceString = String(price);
-  if (priceString.includes('.')) {
-    const decimalPart = priceString.split('.')[1];
+  if (normalized.includes('.')) {
+    const decimalPart = normalized.split('.')[1];
     if (decimalPart.length > 2) {
       return false;
     }
   }
   return true;
 }
+
 

@@ -2,9 +2,21 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './NavSearch.module.css';
 
-function MainServicesNavSearch() {
+function MainServicesNavSearch({ onSearch, onClearSearch }) {
+  const [searchValue, setSearchValue] = useState('');
   const location = useLocation();
   const basePath = '/services';
+
+  const handleSearch = () => {
+    onSearch(searchValue);
+  };
+
+  const handleInputChange = (e) => {
+    setSearchValue(e.target.value);
+    if (e.target.value === '') {
+      onClearSearch(); 
+    }
+  };
 
   // State for filter inputs
   const [minPrice, setMinPrice] = useState('');
@@ -79,8 +91,15 @@ function MainServicesNavSearch() {
       </div>
 
       <div className={styles.searchFilter}>
-        <input type="text" placeholder="Search by Name" className={styles.searchInput} />
-        <button className={styles.searchButton}>
+        <input
+          type="text"
+          placeholder="Search by Name"
+          className={styles.searchInput}
+          value={searchValue}
+          onChange={handleInputChange}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+        />
+        <button className={styles.searchButton} onClick={handleSearch}>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
         <button className={styles.filterButton} onClick={openFilterOverlay}>

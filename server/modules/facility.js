@@ -599,6 +599,50 @@ const facilityModule = {
       responseData.error = error.message;
     }
     return responseData;
+  },
+
+  /**
+   * Searches for facilities by name (partial match) and type.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} facilityType - The facility type to filter by.
+   * @param {string} query - The search query.
+   * @returns {Object} Response data with status, error, and facilities on success.
+   */
+  searchFacilitiesByType: async (dbHelper, facilityType, query) => {
+    const responseData = {
+      status: Status.INTERNAL_SERVER_ERROR,
+      error: 'Error searching facilities',
+      facilities: []
+    };
+
+    try {
+      if (!query || typeof query !== 'string' || query.trim() === '') {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Search query must be a non-empty string';
+        return responseData;
+      }
+      if (!facilityType || typeof facilityType !== 'string') {
+        responseData.status = Status.BAD_REQUEST;
+        responseData.error = 'Facility type is required';
+        return responseData;
+      }
+      const typeUpper = facilityType.trim().toUpperCase();
+
+      const searchRegex = new RegExp(query.trim(), 'i');
+      const facilities = await dbHelper.find(
+        'facility',
+        { name: searchRegex, facilityType: typeUpper },
+        { __v: 0, createdAt: 0 }
+      );
+
+      responseData.status = Status.OK;
+      responseData.error = null;
+      responseData.facilities = facilities;
+    } catch (error) {
+      console.error('Error searching facilities:', error);
+      responseData.error = error.message;
+    }
+    return responseData;
   }
 };
 

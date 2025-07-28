@@ -22,29 +22,49 @@ import { Link } from 'react-router-dom';
 //   { id: 15, name: 'HERNANDEZ', capacity: '20 pax', rate: '375' },
 // ];
 
-function MainServicesDormitories() {
-  const [dormitories, setDormitories] = useState([]);
-  const [loading, setLoading] = useState(true);
+function MainServicesDormitories({ facilities, loading }) {
+  const [defaultDorms, setDefaultDorms] = useState([]);
+  const [fetchingDefault, setFetchingDefault] = useState(false);
 
   useEffect(() => {
-    fetch('/api/facility/get-facilities-by-type/DORMITORY')
-      .then(res => res.json())
-      .then(data => {
-        setDormitories(data.facilities || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setDormitories([]);
-        setLoading(false);
-      });
-  }, []);
+      let ignore = false;
+      if (!facilities || facilities.length === 0) {
+        setFetchingDefault(true);
+        fetch('/api/facility/get-facilities-by-type/DORMITORY')
+          .then(res => res.json())
+          .then(data => {
+            if (!ignore) {
+              setDefaultDorms(data.facilities || []);
+              setFetchingDefault(false);
+            }
+          })
+          .catch(() => {
+            if (!ignore) {
+              setDefaultDorms([]);
+              setFetchingDefault(false);
+            }
+          });
+      }
+      // If searching, clear defaults
+      else {
+        setDefaultDorms([]);
+        setFetchingDefault(false);
+      }
+      return () => { ignore = true; };
+    }, [facilities]);
+
+    const isLoading = loading || fetchingDefault;
+    // Choose what to display: searched data or default data
+    const displayDorms = (facilities && facilities.length > 0) ? facilities : defaultDorms;
+
 
   return (
     <section className={styles.dormitoriesSection}>
       <h2 className={styles.sectionTitle}>DORMITORIES</h2>
 
       <div className={styles.dormitoryGrid}>
-        {!loading && dormitories.length === 0 && (
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && displayDorms.length === 0 && (
           <div className={styles.noFacilities}>
             <div className={styles.softCard}>
               <p>No dormitories found.</p>
@@ -52,7 +72,7 @@ function MainServicesDormitories() {
           </div>
         )}
 
-        {dormitories.map((dorm) => (
+        {!isLoading && displayDorms.map((dorm) => (
           <div key={dorm.id} className={styles.dormitoryCard}>
             <div className={styles.dormitoryImagePlaceholder} style={{ backgroundImage: `url(${dormitoryPlaceholder})` }}>
             </div>
