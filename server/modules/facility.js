@@ -87,10 +87,14 @@ const facilityModule = {
           return responseData;
         }
 
-        if (!isValidCapacity(capacity)) {
-          responseData.status = Status.BAD_REQUEST;
-          responseData.error = 'Invalid capacity';
-          return responseData;
+        if (
+          (facilityType === FacilityType.CONFERENCE || facilityType === FacilityType.DORMITORY)
+        ) {
+          if (!isPresent(capacity) || !isValidCapacity(capacity)) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Invalid or missing capacity for this facility type';
+            return responseData;
+          }
         }
 
         if (
@@ -118,9 +122,15 @@ const facilityModule = {
         const facilityData = {
           name,
           facilityType,
-          capacity: parseInt(String(capacity).replace(/,/g, ''), 10),
           status
         };
+
+        if (
+          facilityType === FacilityType.CONFERENCE ||
+          facilityType === FacilityType.DORMITORY
+        ) {
+          facilityData.capacity = parseInt(String(capacity).replace(/,/g, ''), 10);
+        }
 
         if (imageUrl) {
           facilityData.image = imageUrl;
@@ -131,8 +141,7 @@ const facilityModule = {
 
         }
         if (facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) {
-          
-          facilityData.ratePerPerson = Number(String(price).replace(/,/g, '')) || 0;
+          facilityData.ratePerPerson = Number(String(ratePerPerson).replace(/,/g, '')) || 0;
 
         }
 

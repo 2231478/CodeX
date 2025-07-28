@@ -34,6 +34,7 @@ const __clientPath = path.join(__dirname, '../client');
 dbHelper.connect(dbConnectionString);
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 
 const redisClient = createClient({
@@ -355,11 +356,11 @@ function isProtected(module, action) {
 
 // app.use(sessionParser);
 
-app.use(express.static(__clientPath));
+// app.use(express.static(__clientPath));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__clientPath, 'index.html'));
-});
+// app.get('/', (req, res) => {
+//     res.sendFile(path.join(__clientPath, 'index.html'));
+// });
 
 // app.get('/api/auth/captcha', basicLimiter, async (req, res) => {
 //     res.json(await captchaHelper.handleCaptcha(req.session));

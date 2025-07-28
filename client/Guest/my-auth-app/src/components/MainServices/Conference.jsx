@@ -21,7 +21,7 @@ import { Link } from 'react-router-dom';
 // ];
 
 function MainServicesConference() {
-  const [facilities, setFacilities] = useState([]);
+  const [conferences, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +42,14 @@ function MainServicesConference() {
       <h2 className={styles.sectionTitle}>CONFERENCE HALLS</h2>
       
       <div className={styles.conferenceGrid}>
-        {facilities.map(hall => (
+        {!loading && conferences.length === 0 && (
+          <div className={styles.noFacilities}>
+            <div className={styles.softCard}>
+              <p>No conference halls found.</p>
+            </div>
+          </div>
+        )}
+        {conferences.map(hall => (
           <div key={hall.id} className={styles.conferenceCard}>
             <div className={styles.conferenceImagePlaceholder}>
               <img src={hall.image ? hall.image : placeholderImage} alt={hall.name} />
