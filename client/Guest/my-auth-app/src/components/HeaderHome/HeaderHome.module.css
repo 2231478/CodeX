@@ -1,0 +1,199 @@
+.headerContainer {
+  background-color: #1e3c24e9;
+  color: #F5F5F5;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerLogoLink {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerLogo {
+  width: 80px;
+  height: auto;
+}
+
+.headerLogoText {
+  font-size: 1.3em;
+  font-weight: 530;
+  color: #F5F5F5;
+  white-space: nowrap;
+}
+
+.navbarNav {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.navList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 50px;
+}
+
+.navLink {
+  color: #F5F5F5;
+  text-decoration: none;
+  font-size: 1em;
+  font-weight: 500;
+  padding: 5px 0;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+
+.navLink:hover {
+  color: #46ef65;
+  border-bottom: 2px solid #46ef65;
+}
+
+.desktopActions {
+  display: flex;
+  align-items: center;
+}
+
+.userIconsGroup {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-right: 40px;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  color: #F5F5F5;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.iconButton svg {
+  width: 28px;
+  height: 28px;
+}
+
+.iconButton:hover {
+  color: #46ef65;
+}
+
+.hamburgerButton {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  color: #F5F5F5;
+  padding: 0;
+  z-index: 1100;
+}
+
+.hamburgerButton svg {
+  width: 30px;
+  height: 30px;
+}
+
+.mobileOnlyNavItem {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .navbarNav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 70%;
+    height: 100vh;
+    background-color: #1e3c24;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+    transition: right 0.3s ease-in-out;
+    z-index: 1050;
+    flex-direction: column;
+    padding-top: 80px;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .navbarNav.menuOpen {
+    right: 0;
+    display: flex;
+  }
+
+  .navList {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .navItem {
+    margin: 0;
+  }
+
+  .navLink {
+    font-size: 1.3em;
+    padding: 10px 0;
+  }
+
+  .desktopActions {
+    display: none;
+  }
+
+  .hamburgerButton {
+    display: block;
+  }
+
+  .mobileOnlyNavItem {
+    display: block;
+    margin-top: 20px;
+    width: 100%;
+    text-align: center;
+  }
+  .mobileOnlyNavItem .iconButton {
+    justify-content: center;
+    gap: 10px;
+  }
+  .mobileOnlyNavItem .iconButton span {
+    display: inline-block;
+    font-size: 1.1em;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 576px) {
+  .headerLogoText {
+    display: none;
+  }
+
+  .headerContainer {
+    padding: 15px 20px;
+  }
+
+  .hamburgerButton svg {
+    width: 25px;
+    height: 25px;
+  }
+}
