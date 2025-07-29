@@ -20,36 +20,58 @@ import { Link } from 'react-router-dom';
 //   { id: 14, name: 'GROUNDS', capacity: 'Duration: Half Day', price: '1,000' },
 // ];
 
-function MainServicesConference() {
-  const [conferences, setFacilities] = useState([]);
-  const [loading, setLoading] = useState(true);
+function MainServicesConference({ facilities, loading, searchAttempted }) {
+  const [defaultConferences, setDefaultConferences] = useState([]);
+  const [fetchingDefault, setFetchingDefault] = useState(false);
 
   useEffect(() => {
-    fetch('/api/facility/get-facilities-by-type/CONFERENCE')
-      .then(res => res.json())
-      .then(data => {
-        setFacilities(data.facilities || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setFacilities([]);
-        setLoading(false);
-      });
-  }, []);
+    let ignore = false;
+    if (!facilities || facilities.length === 0) {
+      setFetchingDefault(true);
+      fetch('/api/facility/get-facilities-by-type/CONFERENCE')
+        .then(res => res.json())
+        .then(data => {
+          if (!ignore) {
+            setDefaultConferences(data.facilities || []);
+            setFetchingDefault(false);
+          }
+        })
+        .catch(() => {
+          if (!ignore) {
+            setDefaultConferences([]);
+            setFetchingDefault(false);
+          }
+        });
+    } else {
+      setDefaultConferences([]);
+      setFetchingDefault(false);
+    }
+    return () => { ignore = true; };
+  }, [facilities]);
+
+  const isLoading = loading || fetchingDefault;
+  const displayConferences = (facilities && facilities.length > 0) ? facilities : defaultConferences;
+
+  const showNoResult =
+    !isLoading &&
+    searchAttempted &&
+    facilities &&
+    facilities.length === 0;
 
   return (
     <section className={styles.conferenceSection}>
       <h2 className={styles.sectionTitle}>CONFERENCE HALLS</h2>
       
       <div className={styles.conferenceGrid}>
-        {!loading && conferences.length === 0 && (
+        {isLoading && <p>Loading...</p>}
+        {showNoResult && (
           <div className={styles.noFacilities}>
             <div className={styles.softCard}>
               <p>No conference halls found.</p>
             </div>
           </div>
         )}
-        {conferences.map(hall => (
+        {!isLoading && !showNoResult && displayConferences.map(hall => (
           <div key={hall.id} className={styles.conferenceCard}>
             <div className={styles.conferenceImagePlaceholder}>
               <img src={hall.image ? hall.image : placeholderImage} alt={hall.name} />

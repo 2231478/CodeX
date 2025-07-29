@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './NavSearch.module.css';
 
@@ -10,6 +10,10 @@ function MainServicesNavSearch({ onSearch, onClearSearch, onApplyFilters }) {
   const handleSearch = () => {
     onSearch(searchValue);
   };
+
+  useEffect(() => {
+    setSearchValue('');
+  }, [location.pathname]);
 
   const handleInputChange = (e) => {
     setSearchValue(e.target.value);

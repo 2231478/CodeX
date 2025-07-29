@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { useNavigate, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
 import Navbar from '../Header/Header';
 import Footer from '../Footer/Footer';
@@ -29,6 +29,11 @@ function MainServices() {
   };
 
   const facilityType = getFacilityTypeFromPath(location.pathname);
+
+  useEffect(() => {
+    setFacilities([]);
+    setSearchAttempted(false);
+  }, [facilityType]);
 
   const handleSearch = async (query) => {
     if (!query.trim() || !facilityType) return;
