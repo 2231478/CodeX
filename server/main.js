@@ -120,6 +120,11 @@ const processGetAPI = async (req, res) => {
                     let responseData = await specialServiceModule.getSpecialServiceById(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
                 }
+                case 'search-special-services': {
+                  const params = { ...req.query };
+                  let responseData = await specialServiceModule.searchSpecialServices(dbHelper, params);
+                  return res.status(responseData.status).json(responseData);
+                }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
             }

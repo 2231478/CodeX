@@ -39,13 +39,21 @@ function MainServices() {
     if (!query.trim() || !facilityType) return;
     setLoading(true);
     setSearchAttempted(true);
+
     try {
-      const res = await fetch(
-        `/api/facility/search-facilities?type=${encodeURIComponent(facilityType)}&query=${encodeURIComponent(query)}`
-      );
+      let url, key;
+      if (facilityType === 'OTHER SERVICE') {
+        // Special Services search
+        url = `/api/special-service/search-special-services?query=${encodeURIComponent(query)}`;
+        key = 'specialServices';
+      } else {
+        url = `/api/facility/search-facilities?type=${encodeURIComponent(facilityType)}&query=${encodeURIComponent(query)}`;
+        key = 'facilities';
+      }
+      const res = await fetch(url);
       const data = await res.json();
       if (data.status === 200) {
-        setFacilities(data.facilities || []);
+        setFacilities(data[key] || []);
       } else {
         setFacilities([]);
       }
@@ -64,23 +72,31 @@ function MainServices() {
     setLoading(true);
     setSearchAttempted(true);
     try {
-      const params = new URLSearchParams({
-        type: facilityType,
-        minPrice: filters.minPrice,
-        maxPrice: filters.maxPrice,
-        capacity: filters.capacity,
-        checkInDate: filters.checkInDate,
-        checkOutDate: filters.checkOutDate
-      });
+      let params = new URLSearchParams();
+      let url, key;
 
-      for (const [key, value] of params.entries()) {
-        if (!value) params.delete(key);
+      if (facilityType === 'OTHER SERVICE') {
+        if (filters.minPrice) params.append('minPrice', filters.minPrice);
+        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+        if (filters.query) params.append('query', filters.query);
+        if (filters.unit) params.append('unit', filters.unit);
+        url = `/api/special-service/search-special-services?${params.toString()}`;
+        key = 'specialServices';
+      } else {
+        params.append('type', facilityType);
+        if (filters.minPrice) params.append('minPrice', filters.minPrice);
+        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+        if (filters.capacity) params.append('capacity', filters.capacity);
+        if (filters.checkInDate) params.append('checkInDate', filters.checkInDate);
+        if (filters.checkOutDate) params.append('checkOutDate', filters.checkOutDate);
+        url = `/api/facility/search-facilities?${params.toString()}`;
+        key = 'facilities';
       }
 
-      const res = await fetch(`/api/facility/search-facilities?${params.toString()}`);
+      const res = await fetch(url);
       const data = await res.json();
       if (data.status === 200) {
-        setFacilities(data.facilities || []);
+        setFacilities(data[key] || []);
       } else {
         setFacilities([]);
       }

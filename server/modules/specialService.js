@@ -263,6 +263,42 @@ const specialServiceModule = {
       }
       return responseData;
     },
+
+    /**
+     * Searches special services with optional filters.
+     * @param {Object} dbHelper - Database helper.
+     * @param {Object} options - { query, minPrice, maxPrice, unit }
+     * @returns {Object} Response data with status, error, and specialServices on success.
+     */
+    searchSpecialServices: async (dbHelper, options = {}) => {
+      const { query, minPrice, maxPrice, unit } = options;
+      const responseData = {
+        status: 500,
+        error: 'Error searching special services',
+        specialServices: []
+      };
+
+      try {
+        let filter = {};
+        if (query) filter.name = new RegExp(query.trim(), 'i');
+        if (unit) filter.unit = new RegExp(unit.trim(), 'i');
+
+        if (minPrice || maxPrice) {
+          filter.price = {};
+          if (minPrice) filter.price.$gte = Number(minPrice);
+          if (maxPrice) filter.price.$lte = Number(maxPrice);
+        }
+
+        const specialServices = await dbHelper.find('specialservice', filter, { __v: 0, createdAt: 0 });
+
+        responseData.status = 200;
+        responseData.error = null;
+        responseData.specialServices = specialServices;
+      } catch (error) {
+        responseData.error = error.message;
+      }
+      return responseData;
+    }
 };
 
 export default specialServiceModule;

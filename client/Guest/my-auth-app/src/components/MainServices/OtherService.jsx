@@ -22,22 +22,42 @@ import styles from './OtherService.module.css';
 //   { item: 'Certification Fee', price: 'P 200.00/certificate' },
 // ];
 
-function MainServicesOtherService() {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+function MainServicesOtherService({ facilities, loading, searchAttempted }) {
+  const [defaultServices, setDefaultServices] = useState([]);
+  const [fetchingDefault, setFetchingDefault] = useState(false);
 
   useEffect(() => {
-    fetch('/api/special-service/get-all-special-services')
-      .then(res => res.json())
-      .then(data => {
-        setServices(data.specialServices || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setServices([]);
-        setLoading(false);
-      });
-  }, []);
+    let ignore = false;
+    if (!facilities || facilities.length === 0) {
+      setFetchingDefault(true);
+      fetch('/api/special-service/get-all-special-services')
+        .then(res => res.json())
+        .then(data => {
+          if (!ignore) {
+            setDefaultServices(data.specialServices || []);
+            setFetchingDefault(false);
+          }
+        })
+        .catch(() => {
+          if (!ignore) {
+            setDefaultServices([]);
+            setFetchingDefault(false);
+          }
+        });
+    } else {
+      setDefaultServices([]);
+      setFetchingDefault(false);
+    }
+    return () => { ignore = true; };
+  }, [facilities]);
+
+  const isLoading = loading || fetchingDefault;
+  const displayServices = (facilities && facilities.length > 0) ? facilities : defaultServices;
+  const showNoResult =
+    !isLoading &&
+    searchAttempted &&
+    facilities &&
+    facilities.length === 0;
 
   return (
     <section className={styles.otherServiceSection}>
@@ -49,7 +69,15 @@ function MainServicesOtherService() {
           <h3 className={`${styles.headerColumn} ${styles.headerPriceColumn}`}>PRICE</h3>
         </div>
         <div className={styles.servicesList}>
-          {services.map((service, index) => (
+          {isLoading && <div>Loading...</div>}
+          {showNoResult && (
+            <div className={styles.noFacilities}>
+              <div className={styles.softCard}>
+                <p>No special services found.</p>
+              </div>
+            </div>
+          )}
+          {!isLoading && !showNoResult && displayServices.map((service, index) => (
             <div key={index} className={styles.serviceItem}>
               <span className={styles.serviceName}>{service.name}</span>
               <span className={styles.servicePrice}>₱{Number(service.price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
