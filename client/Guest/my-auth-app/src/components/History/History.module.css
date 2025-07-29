@@ -1,0 +1,294 @@
+.historyPageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+main {
+  flex-grow: 1;
+}
+
+.heroSection {
+  position: relative;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  z-index: 1;
+}
+
+.heroSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: -1;
+}
+
+.heroContent {
+  max-width: 800px;
+  padding: 10px;
+}
+
+.heroTitle {
+  font-size: 3.5em;
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.heroSubtitle {
+  font-size: 1.5em;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.exploreButton {
+  background-color: #538E5E;
+  color: white;
+  border: none;
+  padding: 17px 90px;
+  border-radius: 30px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.exploreButton:hover {
+  background-color: #1e3c24;
+  transform: translateY(-2px);
+}
+
+.historyContentSection {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 130px 132px 30px 132px;
+  align-items: flex-start;
+  gap: 60px;
+  background-color: #f5f5f5;
+}
+
+.imageColumn {
+  flex: 1;
+  min-width: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.historyMarkerImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.textColumn {
+  flex: 2;
+  min-width: 300px;
+  text-align: left;
+}
+
+.contentTitle {
+  font-size: 2.2em;
+  font-weight: bold;
+  color: #1e3c24;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.contentParagraph {
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.evolutionSection {
+  padding: 50px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.evolutionTitle {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #1e3c24;
+  margin-bottom: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timelineGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  justify-items: center;
+  align-items: start;
+}
+
+.timelineEntry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.timelineImageContainer {
+  width: 100%;
+  max-width: 350px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.timelineImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.timelineTextContent {
+  max-width: 350px;
+}
+
+.timelineYear {
+  font-size: 2em;
+  font-weight: bold;
+  color: #538E5E;
+  margin-bottom: 10px;
+}
+
+.timelineDescription {
+  font-size: 1.05em;
+  line-height: 1.6;
+  color: #555;
+}
+
+.evolutionConclusion {
+  font-size: 1.5em;
+  line-height: 1.7;  
+  color: #444;     
+  max-width: 1200px;
+  margin: 60px auto;
+  text-align: center;
+  font-weight: 500;
+}
+
+.highlightGreen {
+  color: #538E5E;
+  font-weight: bold; 
+}
+
+.highlightBrown {
+  color: #4F3718; 
+  font-weight: bold;
+}
+
+
+@media (max-width: 992px) {
+  .heroTitle {
+    font-size: 2.8em;
+  }
+  .heroSubtitle {
+    font-size: 1.2em;
+  }
+  .historyContentSection {
+    flex-direction: column;
+    padding: 60px 20px;
+    gap: 40px;
+  }
+  .imageColumn, .textColumn {
+    min-width: unset;
+    width: 100%;
+  }
+  .textColumn {
+    text-align: center;
+  }
+  .contentTitle {
+    font-size: 1.8em;
+  }
+  .contentParagraph {
+    font-size: 1em;
+  }
+
+  .evolutionTitle {
+    font-size: 2em;
+  }
+  .timelineGrid {
+    grid-template-columns: 1fr;
+  }
+  .evolutionConclusion {
+    font-size: 1em;
+    margin-top: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroTitle {
+    font-size: 2.2em;
+  }
+  .heroSubtitle {
+    font-size: 1em;
+  }
+  .heroSection {
+    height: 50vh;
+  }
+  .evolutionSection {
+    padding: 60px 20px;
+  }
+  .timelineYear {
+    font-size: 1.8em;
+  }
+  .timelineDescription {
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 576px) {
+  .heroSection {
+    height: 45vh;
+  }
+  .heroTitle {
+    font-size: 1.8em;
+  }
+  .heroSubtitle {
+    font-size: 0.9em;
+  }
+  .exploreButton {
+    padding: 10px 25px;
+    font-size: 1em;
+  }
+  .historyContentSection {
+    padding: 40px 15px;
+  }
+  .contentTitle {
+    font-size: 1.5em;
+  }
+
+  .evolutionSection {
+    padding: 40px 15px;
+  }
+  .evolutionTitle {
+    font-size: 1.8em;
+    margin-bottom: 30px;
+  }
+  .timelineImageContainer {
+    max-width: 280px;
+  }
+}

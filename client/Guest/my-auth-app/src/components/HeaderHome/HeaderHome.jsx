@@ -63,7 +63,7 @@ function HeaderHome() {
       <nav className={`${styles.navbarNav} ${isMenuOpen ? styles.menuOpen : ''}`}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <a onClick={() => handleNavLinkClick('/', 'hero')} className={styles.navLink}>HOME</a>
+            <Link to="/homepage" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>HOME</Link>
           </li>
           <li className={styles.navItem}>
             <Link to="/history" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>HISTORY</Link>
