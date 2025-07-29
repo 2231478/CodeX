@@ -14,7 +14,7 @@ import MainServicesOtherService from '../MainServices/OtherService';
 import MainServicesServiceDetail from '../MainServices/ServiceDetail';
 
 
-function MainServices() {
+function Services() {
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchAttempted, setSearchAttempted] = useState(false);
@@ -123,4 +123,4 @@ function MainServices() {
   );
 }
 
-export default MainServices;
+export default Services;

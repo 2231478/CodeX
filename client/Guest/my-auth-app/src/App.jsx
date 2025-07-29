@@ -74,7 +74,7 @@ function App() {
       <Route path="/services/*" element={<MainServices />} />
       <Route path="/homepage/*" element={<Homepage />} />
       <Route path="/history" element={<HistoryPage />} />
-      <Route path="/services" element={<ServicesPage />} />
+      <Route path="/user/services/*" element={<ServicesPage />} />
       <Route path="/faqs" element={<FAQsPage />} />
       <Route path="/contacts" element={<ContactsPage />} />
     </Routes>
