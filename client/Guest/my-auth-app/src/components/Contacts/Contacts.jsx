@@ -30,6 +30,10 @@ function ContactsPage() {
 
   const teachersCampPosition = [16.412063876257942, 120.60624646504405]; 
 
+  const teachersCampAddress = "Teachers' Camp, Leonard Wood Road, Baguio City, Philippines";
+
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${teachersCampPosition[0]},${teachersCampPosition[1]}`;
+
   return (
     <div className={styles.contactsPageContainer}>
       <HeaderHome />
@@ -57,20 +61,22 @@ function ContactsPage() {
               free to reach out! Our team is ready to help you via email
               or phone to ensure a smooth and hassle-free experience.
             </p>
-            <div className={styles.mapContainer}>
-              {/* Interactive Map */}
-              <MapContainer center={teachersCampPosition} zoom={15} scrollWheelZoom={false} className={styles.interactiveMap}>
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={teachersCampPosition}>
-                  <Popup>
-                    Teachers' Camp <br /> Baguio City, Philippines
-                  </Popup>
-                </Marker>
-              </MapContainer>
-            </div>
+             <div className={styles.mapContainer}>
+              {/* Interactive Map */}
+              <MapContainer center={teachersCampPosition} zoom={15} scrollWheelZoom={false} className={styles.interactiveMap}>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={teachersCampPosition}>
+                  <Popup>
+                        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className={styles.mapLink}>
+                            Teachers' Camp <br /> Baguio City, Philippines <br />
+                        </a>
+                  </Popup>
+                </Marker>
+              </MapContainer>
+            </div>
           </div>
 
           <div className={styles.contactDetailsColumn}>

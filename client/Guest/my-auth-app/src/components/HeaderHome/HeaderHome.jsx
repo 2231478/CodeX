@@ -68,9 +68,9 @@ function HeaderHome() {
           <li className={styles.navItem}>
             <Link to="/history" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>HISTORY</Link>
           </li>
-          {/* <li className={styles.navItem}>
+          <li className={styles.navItem}>
             <Link to="/services" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>SERVICES</Link>
-          </li> */}
+          </li>
           <li className={styles.navItem}>
             <Link to="/faqs" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>FAQS</Link>
           </li>

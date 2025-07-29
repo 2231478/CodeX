@@ -9,7 +9,7 @@ import LandingPage from './components/LandingPage/LandingPage';
 import MainServices from './components/MainServices/MainServices';
 import Homepage from './components/Homepage/Homepage';
 import HistoryPage from './components/History/History'; 
-// import ServicesPage from './components/MainServices/MainServices';
+import ServicesPage from './components/MServices/Services';
 import FAQsPage from './components/FAQs/FAQs';
 import ContactsPage from './components/Contacts/Contacts';
 
@@ -74,7 +74,7 @@ function App() {
       <Route path="/services/*" element={<MainServices />} />
       <Route path="/homepage/*" element={<Homepage />} />
       <Route path="/history" element={<HistoryPage />} />
-      {/* <Route path="/services" element={<ServicesPage />} /> */}
+      <Route path="/services" element={<ServicesPage />} />
       <Route path="/faqs" element={<FAQsPage />} />
       <Route path="/contacts" element={<ContactsPage />} />
     </Routes>

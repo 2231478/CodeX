@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import HeaderHome from '../HeaderHome/HeaderHome';
-import Footer from '../FooterHome/FooterHome';  
+import FooterHome from '../FooterHome/FooterHome';  
 import styles from './FAQs.module.css';
 
 function FAQsPage() {
@@ -112,7 +112,7 @@ function FAQsPage() {
         </section>
       </main>
 
-      <Footer />
+      <FooterHome />
     </div>
   );
 }

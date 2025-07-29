@@ -5,7 +5,7 @@ import placeholderImage from '../../assets/conference.jpg';
 
 //placeholder for authentication logic
 const useAuth = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // CHANGE THIS BOOLEAN TO TEST SCENARIOS
+    const [isLoggedIn, setIsLoggedIn] = useState(false); 
     return { isLoggedIn };
 };
 

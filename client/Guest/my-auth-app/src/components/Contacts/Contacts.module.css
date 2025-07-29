@@ -190,6 +190,16 @@ main {
   margin-right: 5px;
 }
 
+.mapLink {
+  color: #007bff; 
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+.mapLink:hover {
+  color: #0056b3;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .heroTitle {
