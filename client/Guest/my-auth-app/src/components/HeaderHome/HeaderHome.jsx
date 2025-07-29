@@ -73,10 +73,10 @@ function HeaderHome() {
           </li>
           <li className={styles.navItem}>
             <Link to="/faqs" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>FAQS</Link>
-          </li>
+          </li> */}
           <li className={styles.navItem}>
             <Link to="/contacts" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>CONTACTS</Link>
-          </li> */}
+          </li>
     
           <li className={styles.mobileOnlyNavItem}>
             <button className={styles.iconButton} onClick={handleNotificationsClick}>

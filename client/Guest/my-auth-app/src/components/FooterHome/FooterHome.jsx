@@ -74,10 +74,10 @@ function Footer({ onReserveNow }) {
             </li>
             <li>
               <Link to="/faqs" className={styles.footerLink}>FAQs</Link>
-            </li>
+            </li> */}
             <li>
               <Link to="/contacts" className={styles.footerLink}>Contacts</Link>
-            </li> */}
+            </li>
           </ul>
         </div>
 

@@ -73,7 +73,6 @@ function AccordionItem({ item, isOpen, toggleAccordion }) {
       <div
         ref={contentRef}
         className={styles.accordionContent}
-        // CRITICAL IMPROVEMENT: Check if contentRef.current exists before accessing scrollHeight
         style={{ maxHeight: isOpen && contentRef.current ? contentRef.current.scrollHeight + 'px' : '0px' }}
       >
         <p>{item.answer}</p>
