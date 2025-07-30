@@ -1,5 +1,5 @@
 import { Status, ProfilePic } from '../constants.js';
-import sharp from 'sharp';
+// import sharp from 'sharp';
 
 const profileModule = {
     createProfile: async (dbHelper, userId) => {
@@ -140,16 +140,16 @@ function isBase64Image(value) {
     return /^data:image\/(png|jpg|jpeg|gif|webp);base64/.test(value);
 }
 
-async function resizeImage(imageBuffer, width, height) {
-    return await sharp(imageBuffer)
-        .resize({
-            width: width,
-            height: height,
-            fit: sharp.fit.inside,
-            withoutEnlargement: true
-        })
-        .toBuffer();
-}
+// async function resizeImage(imageBuffer, width, height) {
+//     return await sharp(imageBuffer)
+//         .resize({
+//             width: width,
+//             height: height,
+//             fit: sharp.fit.inside,
+//             withoutEnlargement: true
+//         })
+//         .toBuffer();
+// }
 
 function toBase64Image(imageBuffer) {
     return `data:image/png;base64,${imageBuffer.toString('base64')}`;

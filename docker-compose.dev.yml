@@ -1,0 +1,33 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: ./client/Guest/my-auth-app
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client/Guest/my-auth-app:/app
+    environment:
+      - NODE_ENV=development
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app
+    environment:
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

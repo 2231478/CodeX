@@ -105,7 +105,6 @@ const dbHelper = {
       mongoose.model('notification', NotificationSchema);
 
       await mongoose.connect(connectionString);
-      console.log('Connected to MongoDB: ' + connectionString);
     } catch (error) {
       console.error('Error connecting to MongoDB:', error);
     }
