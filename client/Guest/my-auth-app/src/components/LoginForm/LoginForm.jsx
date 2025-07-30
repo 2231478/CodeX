@@ -27,6 +27,7 @@ function LoginForm({ onForgotPassword }) {
         const data = await response.json();
         if (response.ok) {
           localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken); 
           localStorage.setItem('userId', data.userId);
           localStorage.setItem('userRole', data.role);
           // redirect…

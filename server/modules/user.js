@@ -3,6 +3,8 @@ import { Status, UserRole } from '../constants.js';
 import { OAuth2Client } from 'google-auth-library';
 import fetch from 'node-fetch';
 import jwtHelper from './jwtHelper.js';
+import redisClient from './redisClient.js'; 
+import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
 const userModule = {
@@ -130,6 +132,9 @@ const userModule = {
         }
         
         const accessToken = jwtHelper.generateAccessToken(userObject);
+        const refreshToken = jwtHelper.generateRefreshToken(userObject);
+
+        await redisClient.set(`refresh_${userObject._id}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
         await dbHelper.updateOne('user', { email }, { lastLoggedIn: new Date().valueOf() });
 
@@ -137,6 +142,7 @@ const userModule = {
         responseData.error = null;
         responseData.message = 'User logged in successfully';
         responseData.accessToken = accessToken;
+        responseData.refreshToken = refreshToken;
         responseData.userId = userObject._id.toString();
         responseData.role = userObject.role;
 
@@ -208,6 +214,9 @@ const userModule = {
         }
         
         const accessToken = jwtHelper.generateAccessToken(user);
+        const refreshToken = jwtHelper.generateRefreshToken(user);
+        
+        await redisClient.set(`refresh_${user._id}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
         responseData.status = Status.OK;
         responseData.error = null;
@@ -215,6 +224,7 @@ const userModule = {
         responseData.userId = user._id.toString();
         responseData.role = user.role;
         responseData.accessToken = accessToken;
+        responseData.refreshToken = refreshToken;
 
     } catch (error) {
         console.error('Error logging in with Google:', error);
@@ -276,6 +286,9 @@ const userModule = {
             }
 
             const accessToken = jwtHelper.generateAccessToken(user);
+            const refreshToken = jwtHelper.generateRefreshToken(user);
+            
+            await redisClient.set(`refresh_${user._id}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
             responseData.status = Status.OK;
             responseData.error = null;
@@ -283,6 +296,7 @@ const userModule = {
             responseData.userId = user._id.toString();
             responseData.role = user.role;
             responseData.accessToken = accessToken;
+            responseData.refreshToken = refreshToken;
 
         } catch (error) {
             console.error('Error logging in with Facebook:', error);
@@ -290,6 +304,16 @@ const userModule = {
         }
 
         return responseData;
+    },
+
+    /**
+     * Logs out a user and revokes their refresh token.
+     * @param {string} userId - The ID of the user to log out.
+     * @returns {Object} Response data with status, error, message.
+     */
+    logout: async (userId) => {
+        await redisClient.del(`refresh_${userId}`);
+        return { status: Status.OK, error: null, message: 'Logged out' };
     },
 
     /**

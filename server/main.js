@@ -3,12 +3,12 @@ import http from 'http';
 import path from 'path';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { createClient } from 'redis';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import 'dotenv/config';
 import dbHelper from './modules/dbHelper.js';
+import redisClient from './modules/redisClient.js';
 import captchaHelper from './modules/captchaHelper.js';
 import emailModule from './modules/email.js';
 import jwtHelper from './modules/jwtHelper.js';
@@ -35,13 +35,8 @@ dbHelper.connect(dbConnectionString);
 
 const app = express();
 app.set('trust proxy', 1);
+await redisClient.connect(); 
 app.use(express.json());
-
-const redisClient = createClient({
-  url: process.env.REDIS_URL
-});
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
-await redisClient.connect();
 
 const basicLimiter = rateLimit({
     windowMs: 1000, 
@@ -377,6 +372,38 @@ function isProtected(module, action) {
 //     req.params.action = 'verify-verification-code';
 //     await processGetAPI(req, res);
 // });
+
+app.post('/api/user/refresh-token', basicLimiter, async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'No refresh token provided' });
+    }
+    // Validate refresh token
+    const payload = jwtHelper.verifyRefreshToken(refreshToken);
+    if (!payload || !payload.userId) {
+      return res.status(403).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    // Check if this refresh token is in Redis and matches
+    const redisKey = `refresh_${payload.userId}`;
+    const storedToken = await redisClient.get(redisKey);
+    if (!storedToken || storedToken !== refreshToken) {
+      return res.status(403).json({ error: 'Refresh token not recognized' });
+    }
+
+    const user = { _id: payload.userId, email: payload.email, role: payload.role }; 
+    const newAccessToken = jwtHelper.generateAccessToken(user);
+
+    const newRefreshToken = jwtHelper.generateRefreshToken(user);
+    await redisClient.set(redisKey, newRefreshToken, { EX: 7 * 24 * 60 * 60 });
+    return res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+
+  } catch (error) {
+    console.error('Error in refresh-token:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.get('/api/:module/:action', basicLimiter, (req, res, next) => {
   if (isProtected(req.params.module, req.params.action)) {
