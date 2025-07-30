@@ -17,6 +17,7 @@ import backgroundImage from './assets/background-blur.png';
 import styles from './App.module.css';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Transactions from './components/Transactions/Transactions';
+import ResHistory from './components/ResHistory/ResHistory';
 
 function AuthLayout() {
   const [authFormState, setAuthFormState] = useState('login');
@@ -79,6 +80,7 @@ function App() {
       <Route path="/faqs" element={<FAQsPage />} />
       <Route path="/contacts" element={<ContactsPage />} />
       <Route path="/transactions" element={<Transactions />} />
+      <Route path="/reservations" element={<ResHistory />} />
     </Routes>
   );
 }
