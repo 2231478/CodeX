@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import commonStyles from '../AuthFormContainer/AuthFormContainer.module.css';
 import specificStyles from './SignUpForm.module.css';
 import { FaFacebook, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -20,6 +21,15 @@ function SignUpForm({ onRegistrationSuccess }) {
   const [error, setError] = useState(null);
   const [facebookLoading, setFacebookLoading] = useState(false);
   const [facebookError, setFacebookError] = useState(null);
+  const navigate = useNavigate();
+
+  const handleRegistrationSuccess = () => {
+    if (onRegistrationSuccess) {
+      onRegistrationSuccess();
+    } else {
+      navigate('/auth/login');
+    }
+  };
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
@@ -38,10 +48,7 @@ function SignUpForm({ onRegistrationSuccess }) {
 
         if (response.ok) {
           console.log('Google login successful:', data);
-          // Since google-login also handles registration, we can call onRegistrationSuccess
-          if (onRegistrationSuccess) {
-            onRegistrationSuccess();
-          }
+          handleRegistrationSuccess(); 
         } else {
           console.error('Google login failed:', data.error);
           setError(data.error || 'Google login failed. Please try again.');
@@ -73,10 +80,7 @@ function SignUpForm({ onRegistrationSuccess }) {
         });
         const data = await apiRes.json();
         if (apiRes.ok) {
-          console.log('Facebook login successful:', data);
-          if (onRegistrationSuccess) {
-            onRegistrationSuccess();
-          }
+          handleRegistrationSuccess(); 
         } else {
           setFacebookError(data.error || 'Facebook login failed. Please try again.');
         }
@@ -133,10 +137,7 @@ function SignUpForm({ onRegistrationSuccess }) {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Registration successful:', data);
-        if (onRegistrationSuccess) {
-          onRegistrationSuccess();
-        }
+        handleRegistrationSuccess(); 
       } else {
         console.error('Registration failed:', data.error);
         setError(data.error || 'Registration failed. Please try again.');

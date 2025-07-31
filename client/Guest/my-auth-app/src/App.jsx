@@ -50,7 +50,12 @@ function AuthLayout() {
             />
           )}
           {authFormState === 'signup' && (
-            <SignUpForm onShowTerms={() => setShowTermsModal(true)} />
+            <SignUpForm onShowTerms={() => setShowTermsModal(true)}
+              onRegistrationSuccess={() => {
+                  setAuthFormState('login');
+                  navigate('/auth/login');
+                }}
+            />
           )}
           {authFormState === 'forgot-password' && (
             <ForgotPasswordForm onBackToLogin={() => toggleAuthForm('login')} />
