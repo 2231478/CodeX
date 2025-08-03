@@ -21,6 +21,7 @@ services:
       - ./server/.env
     volumes:
       - ./server:/app
+      - ./server/modules/taracamp-e87a751f4810.json:/app/modules/taracamp-e87a751f4810.json
     environment:
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
