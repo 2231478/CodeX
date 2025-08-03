@@ -4,7 +4,7 @@ import { FaGoogle, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useFacebookLogin } from '@kazion/react-facebook-login';
 
-function LoginForm({ onForgotPassword }) {
+function LoginForm({ onForgotPassword, onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -103,9 +103,10 @@ function LoginForm({ onForgotPassword }) {
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userRole', data.role);
-        // redirect…
+        onLoginSuccess();
       } else {
         setError(data.error || 'Login failed. Please try again.');
       }

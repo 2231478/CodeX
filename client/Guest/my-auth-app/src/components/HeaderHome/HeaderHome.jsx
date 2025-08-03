@@ -76,13 +76,60 @@ function HeaderHome() {
     navigate('/transactions'); // Example: navigate to transactions page
   };
 
-  const handleLogoutClick = () => {
-    console.log("Logout clicked!");
-    setIsAccountMenuOpen(false); // Close menu after click
-    // TODO: Implement logout logic (e.g., clear tokens, redirect to login)
-    navigate('/auth/logout'); // Example: navigate to logout endpoint or page
-  };
+  const handleLogoutClick = async () => {
+    setIsAccountMenuOpen(false);
 
+    const isTokenExpired = (token) => {
+      if (!token) return true;
+      try {
+        const [, payloadBase64] = token.split('.');
+        if (!payloadBase64) return true;
+        const payload = JSON.parse(atob(payloadBase64));
+        return payload.exp * 1000 < Date.now();
+      } catch {
+        return true;
+      }
+    };
+
+    try {
+      let accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      if (!accessToken) {
+        localStorage.clear();
+        navigate('/auth/login');
+        return;
+      }
+
+      if (isTokenExpired(accessToken) && refreshToken) {
+        const res = await fetch('/api/user/refresh-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          accessToken = data.accessToken;
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
+        } else {
+          localStorage.clear();
+          navigate('/auth/login');
+          return;
+        }
+      }
+
+      await fetch('/api/user/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+
+    localStorage.clear();
+    navigate('/auth/login');
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);

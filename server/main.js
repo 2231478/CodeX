@@ -232,7 +232,7 @@ const processPostAPI = async (req, res) => {
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'logout': {
-                    let responseData = await userModule.logout(req.session);
+                    let responseData = await userModule.logout(req.user.userId);
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'profile': {

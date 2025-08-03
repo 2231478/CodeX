@@ -30,8 +30,7 @@ function AuthLayout() {
   };
 
   const handleLoginSuccess = () => {
-    console.log("Login successful! Redirecting to logged-in experience.");
-    alert("Login Successful! (You would go to a dashboard now)");
+    navigate('/homepage');
   };
 
   return (
