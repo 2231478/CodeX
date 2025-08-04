@@ -18,6 +18,7 @@ import styles from './App.module.css';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Transactions from './components/Transactions/Transactions';
 import ResHistory from './components/ResHistory/ResHistory';
+import RequireAuth from './components/Utilities/RequireAuth';
 
 function AuthLayout() {
   const [authFormState, setAuthFormState] = useState('login');
@@ -78,6 +79,8 @@ function App() {
       <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
       <Route path="/auth/*" element={<AuthLayout />} />
       <Route path="/services/*" element={<MainServices />} />
+    
+     {/* <Route element={<RequireAuth />}> */} 
       <Route path="/homepage/*" element={<Homepage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/user/services/*" element={<ServicesPage />} />
@@ -85,6 +88,7 @@ function App() {
       <Route path="/contacts" element={<ContactsPage />} />
       <Route path="/transactions" element={<Transactions />} />
       <Route path="/reservations" element={<ResHistory />} />
+     {/* </Route> */}
     </Routes>
   );
 }

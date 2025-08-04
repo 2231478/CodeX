@@ -25,7 +25,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 const secretKey = process.env.SESSION_KEY;
 const dbConnectionString = process.env.DB_CONN;
 const upload = multer({ storage: multer.memoryStorage() });
