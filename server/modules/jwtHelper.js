@@ -12,9 +12,10 @@ const jwtHelper = {
                 userId: user._id?.toString(),
                 email: user.email,
                 role: user.role,
+                jti: user.jti
             },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: '15m' }
         );
     },
 
@@ -27,7 +28,7 @@ const jwtHelper = {
     jwt.sign(
       {
         userId: user._id?.toString(),
-        email: user.email,
+        jti: user.jti
       },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d' } 

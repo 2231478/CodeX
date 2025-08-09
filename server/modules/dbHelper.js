@@ -3,10 +3,13 @@ import sanitizeHtml from 'sanitize-html';
 import { UserRole, Category, GuestType, ReservationStatus, FacilityType, FacilityStatus, ServiceType } from '../constants.js';
 
 function sanitizeObject(obj) {
-  if (typeof obj === 'string') return sanitizeHtml(obj, { allowedTags: [], allowedAttributes: {} });
+  if (typeof obj === 'string') {
+    return sanitizeHtml(obj, { allowedTags: [], allowedAttributes: {} });
+  }
   if (Array.isArray(obj)) return obj.map(sanitizeObject);
   if (typeof obj === 'object' && obj !== null) {
     for (const key of Object.keys(obj)) {
+      if (['password', 'verificationCode', 'letterOfIntentFile'].includes(key)) continue;
       obj[key] = sanitizeObject(obj[key]);
     }
     return obj;
@@ -18,15 +21,19 @@ const dbHelper = {
   connect: async (connectionString) => {
     try {
       const UserSchema = new mongoose.Schema({
-        email: { type: String, required: true, unique: true },
+        email: { type: String, required: false, unique: true },
         name: { type: String, required: true },
         password: { type: String, required: false },
+        googleId: { type: String, required: false, unique: true, sparse: true },  
+        facebookId: { type: String, required: false, unique: true, sparse: true },
         role: { type: String, enum: Object.values(UserRole), required: true, default: UserRole.GUEST },
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, required: false },
         lastLoggedIn: { type: Date, required: false },
-        verificationCode: { type: String, required: false },
-        verificationCodeExpiry: { type: Date, required: false }
+        verificationCodeHash: { type: String, required: false },
+        verificationCodeExpiry: { type: Date, required: false },
+        resetTokenHash: { type: String, required: false },
+        resetTokenExpiry: { type: Date, required: false },
       });
 
       const ProfileSchema = new mongoose.Schema({

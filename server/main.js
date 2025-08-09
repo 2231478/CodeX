@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 import 'dotenv/config';
 import dbHelper from './modules/dbHelper.js';
 import redisClient from './modules/redisClient.js';
@@ -232,7 +233,8 @@ const processPostAPI = async (req, res) => {
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'logout': {
-                    let responseData = await userModule.logout(req.user.userId);
+                    const { userId, jti } = req.user || {};
+                    const responseData = await userModule.logout(userId, jti); 
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'profile': {
@@ -373,32 +375,70 @@ function isProtected(module, action) {
 //     await processGetAPI(req, res);
 // });
 
+const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 days
+
 app.post('/api/user/refresh-token', basicLimiter, async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(401).json({ error: 'No refresh token provided' });
-    }
-    // Validate refresh token
-    const payload = jwtHelper.verifyRefreshToken(refreshToken);
-    if (!payload || !payload.userId) {
+    const token = (req.body?.refreshToken || '').trim();
+    if (!token) return res.status(401).json({ error: 'No refresh token provided' });
+
+    const payload = jwtHelper.verifyRefreshToken(token); 
+    if (!payload?.userId || !payload?.jti) {
       return res.status(403).json({ error: 'Invalid or expired refresh token' });
     }
 
-    // Check if this refresh token is in Redis and matches
-    const redisKey = `refresh_${payload.userId}`;
-    const storedToken = await redisClient.get(redisKey);
-    if (!storedToken || storedToken !== refreshToken) {
-      return res.status(403).json({ error: 'Refresh token not recognized' });
+    const userId = payload.userId;
+    const oldJti = payload.jti;
+    const oldKey = `rt:${userId}:${oldJti}`;
+
+    const stored = await redisClient.get(oldKey);
+    if (!stored) {
+      if (typeof userModule.revokeAllRefreshTokens === 'function') {
+        await userModule.revokeAllRefreshTokens(userId);
+      } else {
+        let cursor = '0';
+        do {
+          const { cursor: next, keys } = await redisClient.scan(cursor, { MATCH: `rt:${userId}:*`, COUNT: 200 });
+          cursor = next;
+          if (keys?.length) await redisClient.del(...keys);
+        } while (cursor !== '0');
+      }
+      return res.status(401).json({ error: 'Refresh token reuse detected. All sessions revoked.' });
+    }
+    if (stored !== token) {
+      if (typeof userModule.revokeAllRefreshTokens === 'function') {
+        await userModule.revokeAllRefreshTokens(userId);
+      }
+      return res.status(401).json({ error: 'Refresh token mismatch. All sessions revoked.' });
     }
 
-    const user = { _id: payload.userId, email: payload.email, role: payload.role }; 
-    const newAccessToken = jwtHelper.generateAccessToken(user);
+    const user = await dbHelper.findOne('user', { _id: userId });
+    if (!user) {
+      if (typeof userModule.revokeAllRefreshTokens === 'function') {
+        await userModule.revokeAllRefreshTokens(userId);
+      }
+      return res.status(403).json({ error: 'User not found' });
+    }
 
-    const newRefreshToken = jwtHelper.generateRefreshToken(user);
-    await redisClient.set(redisKey, newRefreshToken, { EX: 7 * 24 * 60 * 60 });
-    return res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+    const newJti = uuidv4();
+    const safeUser = { _id: userId, email: user.email || '', role: user.role, jti: newJti };
 
+    const newAccessToken = jwtHelper.generateAccessToken(safeUser);
+    const newRefreshToken = jwtHelper.generateRefreshToken(safeUser);
+
+    const newKey = `rt:${userId}:${newJti}`;
+    const multi = redisClient.multi();
+    multi.del(oldKey);
+    multi.set(newKey, newRefreshToken, { EX: REFRESH_TTL });
+    await multi.exec();
+
+    return res.json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      jti: newJti,
+      userId,
+      role: user.role
+    });
   } catch (error) {
     console.error('Error in refresh-token:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -526,5 +566,5 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(port, () => {
-    console.log(`API listening at http://localhost:${port}`);
+    console.log(`API listening at http://0.0.0.0:${port}`);
 });
