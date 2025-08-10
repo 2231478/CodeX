@@ -11,7 +11,7 @@ const userModule = {
     /**
      * Registers a new user.
      * @param {object} dbHelper - The database helper for database operations.
-     * @param {object} data - The data object containing the email, name, and password fields.
+     * @param {object} data - The data object containing the email, firstName, lastName, and password fields.
      * @returns {object} Response data with status, error, message, and userId on success.
      */
     register: async (dbHelper, data) => {
@@ -19,14 +19,11 @@ const userModule = {
             status: Status.INTERNAL_SERVER_ERROR,
             error: 'Error on registering user'
         };
+
         try {
             let { email, firstName, lastName, password } = data;
-            if (
-                !isPresent(email) ||
-                !isPresent(firstName) ||
-                !isPresent(lastName) ||
-                !isPresent(password)
-            ) {
+            
+            if (!isPresent(email) || !isPresent(firstName) || !isPresent(lastName) || !isPresent(password)) {
                 responseData.status = Status.BAD_REQUEST;
                 responseData.error = 'Missing required fields';
                 return responseData;
@@ -35,7 +32,6 @@ const userModule = {
             email = email.trim().toLowerCase();
             firstName = firstName.trim();
             lastName = lastName.trim();
-
             const name = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
 
             if (!isValidEmail(email)) {
@@ -63,115 +59,137 @@ const userModule = {
                 return responseData;
             }
 
-            try {
-                const userCreated = await dbHelper.create('user', { 
-                    email, 
-                    name,
-                    password: await hashPassword(password), 
-                    role: UserRole.GUEST,
-                    createdAt: Date.now(),
-                    lastLoggedIn: null
-                });                
+            const userCreated = await dbHelper.create('user', { 
+                email, 
+                name,
+                password: await hashPassword(password), 
+                role: UserRole.GUEST,
+                createdAt: Date.now(),
+                lastLoggedIn: null
+            });
 
-                responseData.status = Status.CREATED;
-                responseData.error = null;
-                responseData.message = 'User registered successfully';
-                responseData.userId = userCreated._id.toString();
-                responseData.role = userCreated.role;
+            // Uncomment if you want automatic login after registration
+            // Generate tokens with JTI (consistent with login)
+            // const jti = uuidv4();
+            // const safeUser = { 
+            //     _id: userCreated._id.toString(), 
+            //     email: userCreated.email, 
+            //     role: userCreated.role, 
+            //     jti 
+            // };
+            
+            // const accessToken = jwtHelper.generateAccessToken(safeUser);
+            // const refreshToken = jwtHelper.generateRefreshToken(safeUser);
+            // const userId = userCreated._id.toString();
 
-            } catch (error) {
-                // Catch duplicate key cleanly (requires unique index on email)
-                if (error && (error.code === 11000 || error.code === 'ER_DUP_ENTRY')) {
-                    responseData.status = Status.BAD_REQUEST;
-                    responseData.error = 'Email already exists';
-                } else {
-                    console.error('Error registering user:', error);
-                    responseData.status = Status.INTERNAL_SERVER_ERROR;
-                    responseData.error = 'Internal server error';
-                }
-            }
+            // await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
+
+            responseData.status = Status.CREATED;
+            responseData.error = null;
+            responseData.message = 'User registered successfully';
+            // responseData.accessToken = accessToken;
+            // responseData.refreshToken = refreshToken;
+            // responseData.userId = userId;
+            responseData.role = userCreated.role;
+
         } catch (error) {
             console.error('Error registering user:', error);
-            responseData.status = Status.INTERNAL_SERVER_ERROR;
-            responseData.error = 'Internal server error';
+            
+            if (error && (error.code === 11000 || error.code === 'ER_DUP_ENTRY')) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Email already exists';
+            } else {
+                responseData.status = Status.INTERNAL_SERVER_ERROR;
+                responseData.error = 'Internal server error';
+            }
         }
+        
         return responseData;
     },
     
     /**
      * Logs in a user to the system
-     * @param {object} dbHelper the database helper object
-     * @param {object} data the data object containing the email and password fields
-     * @returns {object} the response data object containing the status and error fields
+     * @param {object} dbHelper - The database helper object
+     * @param {object} data - The data object containing the email and password fields
+     * @returns {object} The response data object containing the status, tokens, and user info
      */
     login: async (dbHelper, data) => {
         const responseData = {
-        status: Status.INTERNAL_SERVER_ERROR,
-        error: 'Error on logging in user'
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on logging in user'
         };
+
         try {
-        let { email, password } = data;
+            let { email, password } = data;
 
-        if (!isPresent(email) || !isPresent(password)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing required fields';
-            return responseData;
-        }
+            if (!isPresent(email) || !isPresent(password)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Missing required fields';
+                return responseData;
+            }
 
-        email = email.trim().toLowerCase();
+            email = email.trim().toLowerCase();
 
-        if (!isValidEmail(email)) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid email address';
-            return responseData;
-        }
+            if (!isValidEmail(email)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid email address';
+                return responseData;
+            }
 
-        const userObject = await dbHelper.findOne('user', { email });
-        if (!userObject) {
-            await new Promise(r => setTimeout(r, 100));
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid Credentials';
-            return responseData;
-        }
+            const userObject = await dbHelper.findOne('user', { email });
+            if (!userObject) {
+                await new Promise(r => setTimeout(r, 100));
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Invalid credentials';
+                return responseData;
+            }
 
-        if (!userObject.password) {
-            await new Promise(r => setTimeout(r, 100));
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid Credentials';
-            return responseData;
-        }
+            if (!userObject || !userObject.password) {
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Invalid credentials.';
+                return responseData;
+            }
+            
+            const match = await bcrypt.compare(password, userObject.password);
+            if (!match) {
+                await new Promise(r => setTimeout(r, 100));
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Invalid credentials';
+                return responseData;
+            }
 
-        const match = await bcrypt.compare(password, userObject.password);
-        if (!match) {
-            await new Promise(r => setTimeout(r, 100));
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid Credentials';
-            return responseData;
-        }
-        
-        const jti = uuidv4();
-        const safeUser = { _id: userObject._id.toString(), email: userObject.email, role: userObject.role, jti };
-        const accessToken = jwtHelper.generateAccessToken(safeUser);
-        const refreshToken = jwtHelper.generateRefreshToken(safeUser);
-        const userId = userObject._id.toString();
+            const jti = uuidv4();
+            const userId = userObject._id.toString();
+            const safeUser = { 
+                _id: userId, 
+                email: userObject.email, 
+                role: userObject.role, 
+                jti 
+            };
 
-        await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: 7 * 24 * 60 * 60 })
+            const accessToken = jwtHelper.generateAccessToken(safeUser);
+            const refreshToken = jwtHelper.generateRefreshToken(safeUser);
 
-        await dbHelper.updateOne('user', { _id: userObject._id }, { lastLoggedIn: Date.now() });
+            const REFRESH_TTL = 7 * 24 * 60 * 60; 
+            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: REFRESH_TTL });
 
-        responseData.status = Status.OK;
-        responseData.error = null;
-        responseData.message = 'User logged in successfully';
-        responseData.accessToken = accessToken;
-        responseData.refreshToken = refreshToken;
-        responseData.userId = userObject._id.toString();
-        responseData.role = userObject.role;
+            await dbHelper.updateOne('user', { _id: userObject._id }, { lastLoggedIn: Date.now() });
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'User logged in successfully';
+            responseData.accessToken = accessToken;
+            responseData.refreshToken = refreshToken;
+            responseData.jti = jti;
+            responseData.userId = userId;
+            responseData.role = userObject.role;
 
         } catch (error) {
-        console.error('Error logging in user:', error);
-        responseData.status = Status.INTERNAL_SERVER_ERROR;
-        responseData.error = "Internal server error";
+            console.error('Error logging in user:', error);
+            responseData.status = Status.INTERNAL_SERVER_ERROR;
+            responseData.error = 'Internal server error';
         }
+
         return responseData;
     },
 
@@ -182,99 +200,109 @@ const userModule = {
      * @returns {Object} Response data with status, error, message, and userId on success.
      */
     googleLogin: async (dbHelper, data) => {
-    const responseData = {
-        status: Status.INTERNAL_SERVER_ERROR,
-        error: 'Error on logging in with Google'
-    };
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on logging in with Google'
+        };
 
-    try {
-        if (!data.token) {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Missing Google token';
-        return responseData;
-        }
+        try {
+            const code = data?.token;
+            if (!code) {
+            responseData.status = Status.BAD_REQUEST;
+            responseData.error = 'Missing Google token';
+            return responseData;
+            }
 
-        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+            const client = new OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            'postmessage'
+            );
 
-        const tokenResponse = await client.getToken({
-            code: data.token,
+            const tokenResponse = await client.getToken({
+            code,
             client_id: process.env.GOOGLE_CLIENT_ID,
             client_secret: process.env.GOOGLE_CLIENT_SECRET,
             redirect_uri: 'postmessage',
             grant_type: 'authorization_code'
-        });
+            });
 
-        const idToken = tokenResponse.tokens.id_token;
-        if (!idToken) {
+            const idToken = tokenResponse.tokens.id_token;
+            if (!idToken) {
             responseData.status = Status.UNAUTHORIZED;
             responseData.error = 'Invalid Google token';
             return responseData;
-        }
-        const ticket = await client.verifyIdToken({
-            idToken: idToken,
+            }
+
+            const ticket = await client.verifyIdToken({
+            idToken,
             audience: process.env.GOOGLE_CLIENT_ID
-        });
+            });
+            const payload = ticket.getPayload();
 
-        const payload = ticket.getPayload();
-        const googleId = payload.sub;
-        const rawEmail = payload?.email || '';
-        const email = rawEmail.trim().toLowerCase();
-        const name = payload?.name || '';
+            const googleId = payload?.sub;
+            const name = payload?.name || '';
+            const email = (payload?.email || '').trim().toLowerCase();
 
-        if (!email || payload?.email_verified !== true) {
-            responseData.status = Status.UNAUTHORIZED;
-            responseData.error = 'Google email not verified';
-            return responseData;
-        }
+            if (!googleId || payload?.email_verified !== true) {
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Google email not verified';
+                return responseData;
+            }
 
-        let user = await dbHelper.findOne('user', { googleId });
-        if (!user) {
-            user = await dbHelper.findOne('user', { email });
-            if (user) {
-                if (user.googleId && user.googleId !== googleId) {
-                    responseData.status = Status.CONFLICT;
-                    responseData.error = 'Email already linked to another Google account';
+            let user = await dbHelper.findOne('user', { googleId });
+            if (!user) {
+                if (email) {
+                    const emailOwner = await dbHelper.findOne('user', { email });
+                    if (emailOwner) {
+                    responseData.status = Status.BAD_REQUEST;
+                    responseData.error = 'Email already exists';
                     return responseData;
-                }
-                await dbHelper.updateOne('user', { _id: user._id }, { googleId, lastLoggedIn: Date.now() });
-            } else {
-                user = await dbHelper.create('user', {
-                    email,
+                    }
+                }   
+
+                const baseDoc = {
+                    email: email || null,
                     name,
                     googleId,
                     role: UserRole.GUEST,
                     createdAt: Date.now(),
                     lastLoggedIn: Date.now()
-                });
+                };
+
+                user = await dbHelper.create('user', baseDoc);
+            } else {
+                await dbHelper.updateOne('user', { _id: user._id }, { lastLoggedIn: Date.now() });
             }
-        } else {
-            await dbHelper.updateOne('user', { _id: user._id }, { lastLoggedIn: Date.now() });
+
+            const jti = uuidv4();
+            const userId = user._id.toString();
+            const safeUser = { _id: userId, email: user.email || '', role: user.role, jti };
+
+            const accessToken = jwtHelper.generateAccessToken(safeUser);
+            const refreshToken = jwtHelper.generateRefreshToken(safeUser);
+
+            const REFRESH_TTL = 7 * 24 * 60 * 60;
+            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: REFRESH_TTL });
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'User logged in with Google successfully';
+            responseData.userId = userId;
+            responseData.role = user.role;
+            responseData.accessToken = accessToken;
+            responseData.refreshToken = refreshToken;
+            responseData.jti = jti;
+            return responseData;
+
+        } catch (error) {
+            console.error('Error logging in with Google:', error);
+            responseData.status = Status.INTERNAL_SERVER_ERROR;
+            responseData.error = 'Internal server error';
+            return responseData;
         }
-        
-        const jti = uuidv4();
-        const safeUser = { _id: user._id.toString(), email: user.email, role: user.role, jti };
-        const accessToken = jwtHelper.generateAccessToken(safeUser);
-        const refreshToken = jwtHelper.generateRefreshToken(safeUser);
-        const userId = user._id.toString();
-
-        await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: 7 * 24 * 60 * 60 })
-
-        responseData.status = Status.OK;
-        responseData.error = null;
-        responseData.message = 'User logged in with Google successfully';
-        responseData.userId = user._id.toString();
-        responseData.role = user.role;
-        responseData.accessToken = accessToken;
-        responseData.refreshToken = refreshToken;
-
-    } catch (error) {
-        console.error('Error logging in with Google:', error);
-        responseData.status = Status.INTERNAL_SERVER_ERROR;
-        responseData.error = "Internal server error";
-    }
-
-    return responseData;
     },
+
 
     /**
      * Logs in or registers a user via Facebook OAuth.
@@ -289,10 +317,11 @@ const userModule = {
         };
 
         try {
-            if (!data.token) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing Facebook token';
-            return responseData;
+            const userToken = data?.token;
+            if (!userToken) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Missing Facebook token';
+                return responseData;
             }
 
             const appId = process.env.FACEBOOK_APP_ID;
@@ -300,87 +329,81 @@ const userModule = {
             const appAccessToken = `${appId}|${appSecret}`;
 
             const debugRes = await fetch(
-            `https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(data.token)}&access_token=${encodeURIComponent(appAccessToken)}`
+            `https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(userToken)}&access_token=${encodeURIComponent(appAccessToken)}`
             );
             const debug = await debugRes.json();
             const isValid = debug?.data?.is_valid && debug?.data?.app_id === appId;
             if (!isValid) {
-            responseData.status = Status.UNAUTHORIZED;
-            responseData.error = 'Invalid Facebook token';
-            return responseData;
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Invalid Facebook token';
+                return responseData;
             }
 
-            const meRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(data.token)}`);
+            const meRes = await fetch(
+            `https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(userToken)}`
+            );
             const me = await meRes.json();
-
-            if (!me || !me.id) {
-            responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Invalid Facebook user data';
-            return responseData;
+            if (!me?.id) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid Facebook user data';
+                return responseData;
             }
 
             const facebookId = me.id;
-            const email = (me.email || '').trim().toLowerCase();   
             const name = me.name || '';
+            const email = (me.email || '').trim().toLowerCase();
 
-            let user = await dbHelper.findOne('user', { facebookId });
-            if (!user) {
+           let user = await dbHelper.findOne('user', { facebookId });
+           if (!user) {
                 if (email) {
-                    user = await dbHelper.findOne('user', { email });
-                    if (user) {
-                        if (user.facebookId && user.facebookId !== facebookId) {
-                            responseData.status = Status.CONFLICT;
-                            responseData.error = 'Email already linked to another Facebook account';
-                            return responseData;
-                        }
-                        await dbHelper.updateOne('user', { _id: user._id }, { facebookId, lastLoggedIn: Date.now() });
-                    } else {
-                        user = await dbHelper.create('user', {
-                            facebookId,
-                            email,
-                            name,
-                            role: UserRole.GUEST,
-                            createdAt: Date.now(),
-                            lastLoggedIn: Date.now()
-                        });
+                    const emailOwner = await dbHelper.findOne('user', { email });
+                    if (emailOwner) {
+                        responseData.status = Status.BAD_REQUEST;
+                        responseData.error = 'Email already exists';
+                        return responseData;
                     }
-                } else {
-                    user = await dbHelper.create('user', {
-                        facebookId,
-                        email: null, 
-                        name,
-                        role: UserRole.GUEST,
-                        createdAt: Date.now(),
-                        lastLoggedIn: Date.now()
-                    });
                 }
+
+                const baseDoc = {
+                    facebookId,
+                    email: email || null,
+                    name,
+                    role: UserRole.GUEST,
+                    createdAt: Date.now(),
+                    lastLoggedIn: Date.now()
+                };
+
+                 user = await dbHelper.create('user', baseDoc);
             } else {
                 await dbHelper.updateOne('user', { _id: user._id }, { lastLoggedIn: Date.now() });
             }
-            
+
             const jti = uuidv4();
-            const safeUser = { _id: user._id.toString(), email: user.email || '', role: user.role, jti };
+            const userId = user._id.toString();
+            const safeUser = { _id: userId, email: user.email || '', role: user.role, jti };
+
             const accessToken = jwtHelper.generateAccessToken(safeUser);
             const refreshToken = jwtHelper.generateRefreshToken(safeUser);
-            const userId = user._id.toString();
 
-            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: 7 * 24 * 60 * 60 })
+            const REFRESH_TTL = 7 * 24 * 60 * 60;
+            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: REFRESH_TTL });
 
             responseData.status = Status.OK;
             responseData.error = null;
             responseData.message = 'User logged in with Facebook successfully';
-            responseData.userId = user._id.toString();
+            responseData.userId = userId;
             responseData.role = user.role;
             responseData.accessToken = accessToken;
             responseData.refreshToken = refreshToken;
+            responseData.jti = jti;
+            return responseData;
 
         } catch (error) {
             console.error('Error logging in with Facebook:', error);
             responseData.status = Status.INTERNAL_SERVER_ERROR;
             responseData.error = 'Internal server error';
+            return responseData;
         }
-
-        return responseData;
     },
 
     /**
@@ -594,6 +617,95 @@ const userModule = {
         } catch (error) {
             console.error('Error on verifying password reset code:', error);
         }
+        return responseData;
+    },
+
+    /**
+     * Refreshes access and refresh tokens for a user
+     * @param {string} refreshToken - The current refresh token
+     * @returns {Object} Response data with new tokens or error
+     */
+    refreshToken: async (refreshToken) => {
+        const responseData = {
+            status: Status.INTERNAL_SERVER_ERROR,
+            error: 'Error on refreshing token'
+        };
+
+        try {
+            if (!refreshToken?.trim()) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'No refresh token provided';
+                return responseData;
+            }
+
+            const payload = jwtHelper.verifyRefreshToken(refreshToken.trim());
+            if (!payload?.userId || !payload?.jti) {
+                responseData.status = Status.FORBIDDEN;
+                responseData.error = 'Invalid or expired refresh token';
+                return responseData;
+            }
+
+            const userId = payload.userId;
+            const oldJti = payload.jti;
+            const oldKey = `rt:${userId}:${oldJti}`;
+
+            const stored = await redisClient.get(oldKey);
+            if (!stored) {
+                await revokeAllRefreshTokens(userId);
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Refresh token reuse detected. All sessions revoked.';
+                return responseData;
+            }
+
+            if (stored !== refreshToken.trim()) {
+                await revokeAllRefreshTokens(userId);
+                responseData.status = Status.UNAUTHORIZED;
+                responseData.error = 'Refresh token mismatch. All sessions revoked.';
+                return responseData;
+            }
+
+            const user = await dbHelper.findOne('user', { _id: userId });
+            if (!user) {
+                await revokeAllRefreshTokens(userId);
+                responseData.status = Status.FORBIDDEN;
+                responseData.error = 'User not found';
+                return responseData;
+            }
+
+            const newJti = uuidv4();
+            const safeUser = { 
+                _id: userId, 
+                email: user.email || '', 
+                role: user.role, 
+                jti: newJti 
+            };
+
+            const newAccessToken = jwtHelper.generateAccessToken(safeUser);
+            const newRefreshToken = jwtHelper.generateRefreshToken(safeUser);
+
+            const newKey = `rt:${userId}:${newJti}`;
+            const REFRESH_TTL = 7 * 24 * 60 * 60; 
+            
+            const multi = redisClient.multi();
+            multi.del(oldKey);
+            multi.set(newKey, newRefreshToken, { EX: REFRESH_TTL });
+            await multi.exec();
+
+            responseData.status = Status.OK;
+            responseData.error = null;
+            responseData.message = 'Tokens refreshed successfully';
+            responseData.accessToken = newAccessToken;
+            responseData.refreshToken = newRefreshToken;
+            responseData.jti = newJti;
+            responseData.userId = userId;
+            responseData.role = user.role;
+
+        } catch (error) {
+            console.error('Error refreshing token:', error);
+            responseData.status = Status.INTERNAL_SERVER_ERROR;
+            responseData.error = 'Internal server error';
+        }
+
         return responseData;
     }
 };

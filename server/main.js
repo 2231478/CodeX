@@ -40,7 +40,7 @@ await redisClient.connect();
 app.use(express.json());
 
 const basicLimiter = rateLimit({
-    windowMs: 1000, 
+    windowMs: 60 * 1000, 
     max: 10, 
     message: {
         error: 'Too many requests, please try again after a minute.'
@@ -198,7 +198,7 @@ const processPostAPI = async (req, res) => {
                     // captchaHelper.resetCaptcha(req.session);
                     // return res.status(responseData.status).json(responseData);
                     let responseData = await userModule.register(dbHelper, data);
-                    if (responseData.status === Status.OK) {
+                    if (responseData.status === Status.CREATED) {
                         await profileModule.createProfile(dbHelper, responseData.userId);
                     }
                     return res.status(responseData.status).json(responseData);
@@ -255,6 +255,10 @@ const processPostAPI = async (req, res) => {
                 }
                 case 'reset-password': {
                     const responseData = await userModule.resetPassword(dbHelper, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'refresh-token': {
+                    let responseData = await userModule.refreshToken(data.refreshToken);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
@@ -374,76 +378,6 @@ function isProtected(module, action) {
 //     req.params.action = 'verify-verification-code';
 //     await processGetAPI(req, res);
 // });
-
-const REFRESH_TTL = 7 * 24 * 60 * 60; // 7 days
-
-app.post('/api/user/refresh-token', basicLimiter, async (req, res) => {
-  try {
-    const token = (req.body?.refreshToken || '').trim();
-    if (!token) return res.status(401).json({ error: 'No refresh token provided' });
-
-    const payload = jwtHelper.verifyRefreshToken(token); 
-    if (!payload?.userId || !payload?.jti) {
-      return res.status(403).json({ error: 'Invalid or expired refresh token' });
-    }
-
-    const userId = payload.userId;
-    const oldJti = payload.jti;
-    const oldKey = `rt:${userId}:${oldJti}`;
-
-    const stored = await redisClient.get(oldKey);
-    if (!stored) {
-      if (typeof userModule.revokeAllRefreshTokens === 'function') {
-        await userModule.revokeAllRefreshTokens(userId);
-      } else {
-        let cursor = '0';
-        do {
-          const { cursor: next, keys } = await redisClient.scan(cursor, { MATCH: `rt:${userId}:*`, COUNT: 200 });
-          cursor = next;
-          if (keys?.length) await redisClient.del(...keys);
-        } while (cursor !== '0');
-      }
-      return res.status(401).json({ error: 'Refresh token reuse detected. All sessions revoked.' });
-    }
-    if (stored !== token) {
-      if (typeof userModule.revokeAllRefreshTokens === 'function') {
-        await userModule.revokeAllRefreshTokens(userId);
-      }
-      return res.status(401).json({ error: 'Refresh token mismatch. All sessions revoked.' });
-    }
-
-    const user = await dbHelper.findOne('user', { _id: userId });
-    if (!user) {
-      if (typeof userModule.revokeAllRefreshTokens === 'function') {
-        await userModule.revokeAllRefreshTokens(userId);
-      }
-      return res.status(403).json({ error: 'User not found' });
-    }
-
-    const newJti = uuidv4();
-    const safeUser = { _id: userId, email: user.email || '', role: user.role, jti: newJti };
-
-    const newAccessToken = jwtHelper.generateAccessToken(safeUser);
-    const newRefreshToken = jwtHelper.generateRefreshToken(safeUser);
-
-    const newKey = `rt:${userId}:${newJti}`;
-    const multi = redisClient.multi();
-    multi.del(oldKey);
-    multi.set(newKey, newRefreshToken, { EX: REFRESH_TTL });
-    await multi.exec();
-
-    return res.json({
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-      jti: newJti,
-      userId,
-      role: user.role
-    });
-  } catch (error) {
-    console.error('Error in refresh-token:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/api/:module/:action', basicLimiter, (req, res, next) => {
   if (isProtected(req.params.module, req.params.action)) {
