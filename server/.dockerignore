@@ -1,0 +1,5 @@
+node_modules
+dist
+npm-debug.log
+taracamp-e87a751f4810.json
+.env

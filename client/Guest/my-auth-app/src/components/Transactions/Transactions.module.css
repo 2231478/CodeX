@@ -1,0 +1,328 @@
+.transactionsPageContainer {
+  padding-top: 80px; 
+  background-color: #f5f5f5; 
+  min-height: calc(100vh - 80px); 
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; 
+  padding-bottom: 40px;
+}
+
+.contentWrapper {
+  width: 100%;
+  max-width: 1200px; 
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.headerSection {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  color: #1e3c24;
+  margin-top: 40px;
+}
+
+.headerSection {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    color: #1e3c24;
+    margin-top: 40px;
+}
+
+.backButton {
+    cursor: pointer;
+    padding: 12px;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+
+.backButton:hover::before {
+    left: 100%;
+}
+
+.backButton svg {
+    width: 30px;
+    height: 30px;
+    stroke: #1e3c24;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.backButton:hover {
+    transform: translateY(-2px) scale(1.03);
+}
+
+.backButton:hover svg {
+    transform: translateX(-2px);
+    stroke: #558B5E;
+}
+
+.pageTitle {
+    font-size: 2.2em;
+    font-weight: 800;
+    color: #1e3c24;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #1e3c24 0%, #558B5E 50%, #126020 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pageTitle::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(90deg, #216a2e, #558B5E);
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(45, 159, 66, 0.3);
+}
+
+.mainContent {
+    display: flex;
+    gap: 30px;
+}
+
+.onlineTransactionCard {
+    flex: 2; 
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    max-width: 750px;
+}
+
+.cardTitle {
+     background: linear-gradient(135deg, #1e3c24 0%, #157426 50%, #4a7a53 100%);
+    color: #ffffff;
+    font-size: 1.5em;
+    font-weight: 600;
+    padding: 15px 20px;
+    margin: -30px -30px 30px -30px; 
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    text-align: center;
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr 0.8fr;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    font-weight: 600;
+    color: #333;
+}
+
+.tableHeaderItem {
+    padding: 0 10px;
+    text-align: left;
+}
+
+.tableContent {
+    max-height: 400px; 
+    overflow-y: auto; 
+    border: 1px solid #eee; 
+    border-radius: 8px;
+    padding: 10px 0;
+}
+
+.noTransactions {
+    text-align: center;
+    color: #888;
+    padding: 10px;
+    font-style: italic;
+}
+
+.tableRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr 0.8fr;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+}
+
+.tableRow:last-child {
+    border-bottom: none; 
+}
+
+.tableDataItem {
+    padding: 0 10px;
+    color: #555;
+}
+
+.sidebarContent {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.downpaymentBalanceCard,
+.paymentChannelsCard {
+    background-color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+}
+
+.downpaymentBalanceCard .cardTitle {
+    background-color: #558B5E;
+    margin: -30px -30px 30px -30px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    text-align: center;
+}
+
+.dueDate {
+    font-size: 1em;
+    color: #111111;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.highlightDate {
+    font-weight: 600;
+    color: #c90000;
+    font-size: 1em;
+}
+
+.balanceAmount {
+    font-size: 2.7em;
+    font-weight: 700;
+    color: #1e3c24;
+    margin-bottom: 20px;
+}
+
+.note {
+    font-size: 0.7em;
+    color: #888;
+    line-height: 1.5;
+}
+
+.paymentChannelsCard .cardTitle {
+    background-color: #558B5E; 
+    margin: -30px -30px 30px -30px; 
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    text-align: center;
+}
+
+.channelButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.channelButton {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; 
+    gap: 15px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.channelButton:hover {
+    border-color: #2d9f42; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.channelLogo {
+    height: 27px;
+    width: 100px;
+    object-fit: cover;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .mainContent {
+        flex-direction: column;
+    }
+    .onlineTransactionCard,
+    .sidebarContent {
+        flex: none;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .transactionsPageContainer {
+        padding-top: 60px;
+        min-height: calc(100vh - 60px);
+    }
+    .contentWrapper {
+        padding: 15px;
+    }
+    .pageTitle {
+        font-size: 2em;
+    }
+    .cardTitle {
+        font-size: 1.3em;
+        padding: 12px 15px;
+        margin: -20px -20px 20px -20px; 
+    }
+    .onlineTransactionCard,
+    .downpaymentBalanceCard,
+    .paymentChannelsCard {
+        padding: 20px;
+    }
+    .balanceAmount {
+        font-size: 2em;
+    }
+    .tableHeader {
+        grid-template-columns: 0.8fr 1fr 1.2fr 0.8fr; 
+        font-size: 0.9em;
+    }
+    .tableDataItem {
+        font-size: 0.9em;
+    }
+    .channelButton {
+        font-size: 1em;
+        padding: 10px 15px;
+    }
+    .channelLogo {
+        height: 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    .headerSection {
+        margin-bottom: 20px;
+    }
+    .pageTitle {
+        font-size: 1.8em;
+    }
+    .backButton svg {
+        width: 24px;
+        height: 24px;
+    }
+    .cardTitle {
+        font-size: 1.2em;
+        margin: -15px -15px 15px -15px;
+    }
+    .tableHeader, .tableDataItem {
+        font-size: 0.85em;
+    }
+}

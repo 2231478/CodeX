@@ -69,15 +69,15 @@ function Footer({ onReserveNow }) {
             <li>
               <Link to="/history" className={styles.footerLink}>History</Link>
             </li>
-            {/* <li>
-              <Link to="/services" className={styles.footerLink}>Services</Link>
+            <li>
+              <Link to="/user/services" className={styles.footerLink}>Services</Link>
             </li>
             <li>
               <Link to="/faqs" className={styles.footerLink}>FAQs</Link>
             </li>
             <li>
               <Link to="/contacts" className={styles.footerLink}>Contacts</Link>
-            </li> */}
+            </li>
           </ul>
         </div>
 

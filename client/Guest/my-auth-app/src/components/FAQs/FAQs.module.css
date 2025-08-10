@@ -1,0 +1,205 @@
+.faqsPageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+main {
+  flex-grow: 1;
+}
+
+.heroSection {
+  position: relative;
+  height: 25vh; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #4F3718;
+  z-index: 1;
+  padding-top: 70px; 
+}
+
+.heroContent {
+  max-width: 800px;
+  padding: 20px;
+}
+
+.heroTitle {
+  font-size: 2.8em;
+  font-weight: bold;
+  margin-bottom: 0;
+  letter-spacing: 0.05em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+  text-transform: uppercase; 
+}
+
+/* FAQs Content Section */
+.faqsContentSection {
+  padding: 10px 40px;
+  max-width: 900px; 
+  margin: 0 auto;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.faqItem {
+  background-color: #ffffff;
+  border: 1px solid #ddd; 
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); 
+}
+
+.faqQuestionButton {
+  width: 100%;
+  background-color: #ffffff;
+  border: none;
+  padding: 20px 25px;
+  text-align: left;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.3s ease;
+}
+
+.faqQuestionButton:hover {
+  background-color: #538e5e45;
+}
+
+.faqNumber {
+  margin-right: 15px;
+  color: #4F3718; 
+}
+
+.faqQuestion {
+  flex-grow: 1; 
+  color: #4F3718;
+}
+
+.faqToggleIcon {
+  font-size: 0.9em; 
+  color: #4F3718; 
+  margin-left: 15px;
+  transition: transform 0.3s ease;
+}
+
+.faqQuestionButton[aria-expanded="true"] .faqToggleIcon {
+  transform: rotate(180deg);
+}
+
+.faqAnswer {
+  padding: 0px 25px 20px 25px;
+  font-size: 1em;
+  line-height: 1.6;
+  color: #555;
+  border-top: 1px solid #eee;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reserve Now Section */
+.reserveNowSection {
+  margin-top: 60px;
+  text-align: center;
+}
+
+.reserveNowButton {
+  background-color: #1e3c24; 
+  color: white;
+  border: none;
+  padding: 15px 90px;
+  border-radius: 30px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-bottom: 40px;
+}
+
+.reserveNowButton:hover {
+  background-color: #538E5E;
+  transform: translateY(-2px);
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .heroTitle {
+    font-size: 2.2em;
+  }
+  .faqsContentSection {
+    padding: 40px 20px;
+  }
+  .faqQuestionButton {
+    font-size: 1em;
+    padding: 18px 20px;
+  }
+  .faqAnswer {
+    padding: 0px 20px 18px 20px;
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroSection {
+    height: 20vh;
+  }
+  .heroTitle {
+    font-size: 1.8em;
+  }
+  .faqsContentSection {
+    padding: 30px 15px;
+  }
+  .faqQuestionButton {
+    font-size: 0.9em;
+    padding: 15px 15px;
+  }
+  .faqAnswer {
+    padding: 0px 15px 15px 15px;
+    font-size: 0.9em;
+  }
+  .reserveNowButton {
+    padding: 12px 30px;
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 576px) {
+  .heroSection {
+    height: 18vh;
+  }
+  .heroTitle {
+    font-size: 1.5em;
+  }
+  .faqsContentSection {
+    padding: 20px 10px;
+  }
+  .faqQuestionButton {
+    font-size: 0.85em;
+    padding: 12px 10px;
+  }
+  .faqNumber {
+    margin-right: 10px;
+  }
+  .faqToggleIcon {
+    margin-left: 10px;
+  }
+  .faqAnswer {
+    padding: 0px 10px 12px 10px;
+    font-size: 0.85em;
+  }
+}

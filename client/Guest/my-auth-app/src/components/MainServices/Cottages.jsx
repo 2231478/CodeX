@@ -11,36 +11,57 @@ import { Link } from 'react-router-dom';
 //   { id: 5, name: 'COTTAGE (15-18pax)', rate: '8,350' },
 // ];
 
-function MainServicesCottages() {
-  const [cottages, setCottages] = useState([]);
-  const [loading, setLoading] = useState(true);
+function MainServicesCottages({ facilities, loading, searchAttempted }) {
+  const [defaultCottages, setDefaultCottages] = useState([]);
+  const [fetchingDefault, setFetchingDefault] = useState(false);
 
   useEffect(() => {
-    fetch('/api/facility/get-facilities-by-type/COTTAGE')
-      .then(res => res.json())
-      .then(data => {
-        setCottages(data.facilities || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setCottages([]);
-        setLoading(false);
-      });
-  }, []);
+    let ignore = false;
+    if (!facilities || facilities.length === 0) {
+      setFetchingDefault(true);
+      fetch('/api/facility/get-facilities-by-type/COTTAGE')
+        .then(res => res.json())
+        .then(data => {
+          if (!ignore) {
+            setDefaultCottages(data.facilities || []);
+            setFetchingDefault(false);
+          }
+        })
+        .catch(() => {
+          if (!ignore) {
+            setDefaultCottages([]);
+            setFetchingDefault(false);
+          }
+        });
+    } else {
+      setDefaultCottages([]);
+      setFetchingDefault(false);
+    }
+    return () => { ignore = true; };
+  }, [facilities]);
+
+  const isLoading = loading || fetchingDefault;
+  const displayCottages = (facilities && facilities.length > 0) ? facilities : defaultCottages;
+
+  const showNoResult =
+    !isLoading &&
+    searchAttempted &&
+    facilities &&
+    facilities.length === 0;
 
   return (
     <section className={styles.cottagesSection}>
       <h2 className={styles.sectionTitle}>COTTAGES / GUESTHOUSE</h2> {/* */}
-
       <div className={styles.cottageGrid}>
-        {!loading && cottages.length === 0 && (
+        {isLoading && <p>Loading...</p>}
+        {showNoResult && (
           <div className={styles.noFacilities}>
             <div className={styles.softCard}>
               <p>No cottages found.</p>
             </div>
           </div>
         )}
-        {cottages.map(cottage => (
+        {!isLoading && !showNoResult && displayCottages.map(cottage => (
           <div key={cottage.id} className={styles.cottageCard}>
             <div className={styles.cottageImagePlaceholder}>
               <img src={cottage.image ? cottage.image : placeholderImage} alt={cottage.name} />

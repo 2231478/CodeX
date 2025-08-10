@@ -3,12 +3,13 @@ import http from 'http';
 import path from 'path';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { createClient } from 'redis';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 import 'dotenv/config';
 import dbHelper from './modules/dbHelper.js';
+import redisClient from './modules/redisClient.js';
 import captchaHelper from './modules/captchaHelper.js';
 import emailModule from './modules/email.js';
 import jwtHelper from './modules/jwtHelper.js';
@@ -25,7 +26,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 const secretKey = process.env.SESSION_KEY;
 const dbConnectionString = process.env.DB_CONN;
 const upload = multer({ storage: multer.memoryStorage() });
@@ -35,16 +36,11 @@ dbHelper.connect(dbConnectionString);
 
 const app = express();
 app.set('trust proxy', 1);
+await redisClient.connect(); 
 app.use(express.json());
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL
-});
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
-await redisClient.connect();
-
 const basicLimiter = rateLimit({
-    windowMs: 1000, 
+    windowMs: 60 * 1000, 
     max: 10, 
     message: {
         error: 'Too many requests, please try again after a minute.'
@@ -119,6 +115,11 @@ const processGetAPI = async (req, res) => {
                 case 'get-special-service-by-id': {
                     let responseData = await specialServiceModule.getSpecialServiceById(dbHelper, id);
                     return res.status(responseData.status).json(responseData);
+                }
+                case 'search-special-services': {
+                  const params = { ...req.query };
+                  let responseData = await specialServiceModule.searchSpecialServices(dbHelper, params);
+                  return res.status(responseData.status).json(responseData);
                 }
                 default:
                     return res.status(404).json({ error: 'Unknown action' });
@@ -197,7 +198,7 @@ const processPostAPI = async (req, res) => {
                     // captchaHelper.resetCaptcha(req.session);
                     // return res.status(responseData.status).json(responseData);
                     let responseData = await userModule.register(dbHelper, data);
-                    if (responseData.status === Status.OK) {
+                    if (responseData.status === Status.CREATED) {
                         await profileModule.createProfile(dbHelper, responseData.userId);
                     }
                     return res.status(responseData.status).json(responseData);
@@ -232,7 +233,8 @@ const processPostAPI = async (req, res) => {
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'logout': {
-                    let responseData = await userModule.logout(req.session);
+                    const { userId, jti } = req.user || {};
+                    const responseData = await userModule.logout(userId, jti); 
                     return res.status(responseData.status).json(responseData);
                 }
                 case 'profile': {
@@ -253,6 +255,10 @@ const processPostAPI = async (req, res) => {
                 }
                 case 'reset-password': {
                     const responseData = await userModule.resetPassword(dbHelper, data);
+                    return res.status(responseData.status).json(responseData);
+                }
+                case 'refresh-token': {
+                    let responseData = await userModule.refreshToken(data.refreshToken);
                     return res.status(responseData.status).json(responseData);
                 }
                 default:
@@ -494,5 +500,5 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(port, () => {
-    console.log(`API listening at http://localhost:${port}`);
+    console.log(`API listening at http://0.0.0.0:${port}`);
 });

@@ -9,13 +9,16 @@ import LandingPage from './components/LandingPage/LandingPage';
 import MainServices from './components/MainServices/MainServices';
 import Homepage from './components/Homepage/Homepage';
 import HistoryPage from './components/History/History'; 
-// import ServicesPage from './components/MainServices/MainServices';
-// import FAQsPage from './components/FAQs/FAQs';
-// import ContactsPage from './components/Contacts/Contacts';
+import ServicesPage from './components/MServices/Services';
+import FAQsPage from './components/FAQs/FAQs';
+import ContactsPage from './components/Contacts/Contacts';
 
 import backgroundImage from './assets/background-blur.png';
 import styles from './App.module.css';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import Transactions from './components/Transactions/Transactions';
+import ResHistory from './components/ResHistory/ResHistory';
+import RequireAuth from './components/Utilities/RequireAuth';
 
 function AuthLayout() {
   const [authFormState, setAuthFormState] = useState('login');
@@ -28,8 +31,7 @@ function AuthLayout() {
   };
 
   const handleLoginSuccess = () => {
-    console.log("Login successful! Redirecting to logged-in experience.");
-    alert("Login Successful! (You would go to a dashboard now)");
+    navigate('/homepage');
   };
 
   return (
@@ -48,7 +50,12 @@ function AuthLayout() {
             />
           )}
           {authFormState === 'signup' && (
-            <SignUpForm onShowTerms={() => setShowTermsModal(true)} />
+            <SignUpForm onShowTerms={() => setShowTermsModal(true)}
+              onRegistrationSuccess={() => {
+                  setAuthFormState('login');
+                  navigate('/auth/login');
+                }}
+            />
           )}
           {authFormState === 'forgot-password' && (
             <ForgotPasswordForm onBackToLogin={() => toggleAuthForm('login')} />
@@ -72,11 +79,16 @@ function App() {
       <Route path="/" element={<LandingPage onReserveNow={handleReserveNow} />} />
       <Route path="/auth/*" element={<AuthLayout />} />
       <Route path="/services/*" element={<MainServices />} />
+    
+     {/* <Route element={<RequireAuth />}> */} 
       <Route path="/homepage/*" element={<Homepage />} />
       <Route path="/history" element={<HistoryPage />} />
-      {/* <Route path="/services" element={<ServicesPage />} />
+      <Route path="/user/services/*" element={<ServicesPage />} />
       <Route path="/faqs" element={<FAQsPage />} />
-      <Route path="/contacts" element={<ContactsPage />} /> */}
+      <Route path="/contacts" element={<ContactsPage />} />
+      <Route path="/transactions" element={<Transactions />} />
+      <Route path="/reservations" element={<ResHistory />} />
+     {/* </Route> */}
     </Routes>
   );
 }

@@ -1,5 +1,4 @@
 import svgCaptcha from 'svg-captcha';
-import sharp from 'sharp';
 import { Status } from '../constants.js';
 
 const MAX_ATTEMPTS = 5;
@@ -15,11 +14,11 @@ const captchaHelper = {
             background: '#ffffff'
         });
 
-        // Convert SVG to PNG buffer using sharp
-        const svgBuffer = Buffer.from(captcha.data);
-        const pngBuffer = await sharp(svgBuffer)
-            .png()
-            .toBuffer();
+        // // Convert SVG to PNG buffer using sharp
+        // const svgBuffer = Buffer.from(captcha.data);
+        // const pngBuffer = await sharp(svgBuffer)
+        //     .png()
+        //     .toBuffer();
 
         return {
             digits: captcha.text,
