@@ -21,7 +21,7 @@ const userModule = {
         };
 
         try {
-            let { email, firstName, lastName, password } = data;
+            let { email, firstName, lastName, password, role } = data;
             
             if (!isPresent(email) || !isPresent(firstName) || !isPresent(lastName) || !isPresent(password)) {
                 responseData.status = Status.BAD_REQUEST;
@@ -52,6 +52,12 @@ const userModule = {
                 return responseData;
             }
 
+            if (!isValidRole (role)) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Invalid role';
+                return responseData;
+            }
+
             const emailExists = await dbHelper.findOne('user', { email });
             if (emailExists) {
                 responseData.status = Status.BAD_REQUEST;
@@ -63,7 +69,7 @@ const userModule = {
                 email, 
                 name,
                 password: await hashPassword(password), 
-                role: UserRole.GUEST,
+                role,
                 createdAt: Date.now(),
                 lastLoggedIn: null
             });
@@ -89,7 +95,7 @@ const userModule = {
             responseData.message = 'User registered successfully';
             // responseData.accessToken = accessToken;
             // responseData.refreshToken = refreshToken;
-            // responseData.userId = userId;
+            responseData.userId = userCreated._id.toString();
             responseData.role = userCreated.role;
 
         } catch (error) {
@@ -103,7 +109,6 @@ const userModule = {
                 responseData.error = 'Internal server error';
             }
         }
-        
         return responseData;
     },
     
@@ -729,6 +734,10 @@ function isValidPassword(pwd) {
   return len >= 8 && len <= 128;
 }
 
+function isValidRole(role) {
+  return Object.values(UserRole).includes(role);
+}
+
 
 function isPresent(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -765,7 +774,6 @@ async function revokeAllRefreshTokens(userId) {
   }
   await revokeAllRefreshTokensScan(userId);
 }
-
 
 function hashString(s) {
   return crypto.createHash('sha256').update(s, 'utf8').digest('hex');

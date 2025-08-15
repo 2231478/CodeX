@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const storage = new Storage();
-const bucket = storage.bucket(process.env.PRIVATE_BUCKET_NAME);
+const bucket = storage.bucket(process.env.BUCKET_NAME);
 
 const reservationModule = {
   addReservation: async (dbHelper, data, file, user, userSocketMap) => {

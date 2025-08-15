@@ -133,4 +133,3 @@ dist
 node_modules
 .DS_Store
 server/modules/*.json
-*.json

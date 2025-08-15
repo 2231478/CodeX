@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const storage = new Storage();
-const bucket = storage.bucket(process.env.FACILITY_BUCKET_NAME);
+const bucket = storage.bucket(process.env.BUCKET_NAME);
 
 const facilityModule = {
   /**
@@ -30,7 +30,6 @@ const facilityModule = {
         if (
           !isPresent(name) ||
           !isPresent(facilityType) ||
-          // !file ||
           (facilityType === FacilityType.CONFERENCE && !isPresent(price)) ||
           ((facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) && !isPresent(ratePerPerson))
         ) {
@@ -51,6 +50,7 @@ const facilityModule = {
           return responseData;
         }
 
+        let imageKey = null;
         let imageUrl = null;
 
         if (file) {
@@ -61,18 +61,8 @@ const facilityModule = {
             return responseData;
           }
           try {
-            const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
-            const blob = bucket.file(filename);
-            await new Promise((resolve, reject) => {
-              const stream = blob.createWriteStream({
-                resumable: false,
-                contentType: file.mimetype,
-              });
-              stream.on('error', reject);
-              stream.on('finish', resolve);
-              stream.end(file.buffer);
-            });
-            imageUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+            imageKey = await uploadImageAndGetKey(file);
+            imageUrl = await getSignedReadUrl(imageKey);
           } catch (err) {
             responseData.status = Status.INTERNAL_SERVER_ERROR;
             responseData.error = 'Image upload failed: ' + err.message;
@@ -80,16 +70,13 @@ const facilityModule = {
           }
         }
 
-
         if (!isValidFacilityType(facilityType)) {
           responseData.status = Status.BAD_REQUEST;
           responseData.error = 'Invalid facility type';
           return responseData;
         }
 
-        if (
-          (facilityType === FacilityType.CONFERENCE || facilityType === FacilityType.DORMITORY)
-        ) {
+        if (facilityType === FacilityType.CONFERENCE || facilityType === FacilityType.DORMITORY) {
           if (!isPresent(capacity) || !isValidCapacity(capacity)) {
             responseData.status = Status.BAD_REQUEST;
             responseData.error = 'Invalid or missing capacity for this facility type';
@@ -111,7 +98,7 @@ const facilityModule = {
           responseData.error = 'Invalid facility status';
           return responseData;
         }
-        
+
         const existing = await dbHelper.findOne('facility', { name, facilityType });
         if (existing) {
           responseData.status = Status.BAD_REQUEST;
@@ -125,24 +112,19 @@ const facilityModule = {
           status
         };
 
-        if (
-          facilityType === FacilityType.CONFERENCE ||
-          facilityType === FacilityType.DORMITORY
-        ) {
+        if (facilityType === FacilityType.CONFERENCE || facilityType === FacilityType.DORMITORY) {
           facilityData.capacity = parseInt(String(capacity).replace(/,/g, ''), 10);
         }
 
-        if (imageUrl) {
-          facilityData.image = imageUrl;
+        if (imageKey) {
+          facilityData.image = imageKey; // store key only
         }
 
         if (facilityType === FacilityType.CONFERENCE) {
           facilityData.price = Number(String(price).replace(/,/g, '')) || 0;
-
         }
         if (facilityType === FacilityType.DORMITORY || facilityType === FacilityType.COTTAGE) {
           facilityData.ratePerPerson = Number(String(ratePerPerson).replace(/,/g, '')) || 0;
-
         }
 
         const facility = await dbHelper.create('facility', facilityData);
@@ -151,12 +133,14 @@ const facilityModule = {
         responseData.error = null;
         responseData.message = 'Facility added successfully';
         responseData.facilityId = facility._id.toString();
+        if (imageKey) responseData.imageUrl = imageUrl; // convenience for client
       } catch (error) {
         console.error('Error adding facility:', error);
         responseData.error = error.message;
       }
       return responseData;
-    },
+  },
+
 
   /**
    * Fetches all facilities.
@@ -172,9 +156,17 @@ const facilityModule = {
     try {
       const facilities = await dbHelper.find('facility', {}, { __v: 0, createdAt: 0 });
 
+      const withSigned = await Promise.all(
+        facilities.map(async f => {
+          const obj = f.toObject ? f.toObject() : f;
+          obj.image = obj.image ? await getSignedReadUrl(obj.image) : null;
+          return obj;
+        })
+      );
+
       responseData.status = Status.OK;
       responseData.error = null;
-      responseData.facilities = facilities; 
+      responseData.facilities = withSigned;
     } catch (error) {
       responseData.error = error.message;
     }
@@ -195,10 +187,10 @@ const facilityModule = {
     };
 
     if (!id) {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Missing facility ID';
-        return responseData;
-      }
+      responseData.status = Status.BAD_REQUEST;
+      responseData.error = 'Missing facility ID';
+      return responseData;
+    }
 
     try {
       const facility = await dbHelper.findOne('facility', { _id: id });
@@ -209,8 +201,12 @@ const facilityModule = {
       }
 
       const facilityObject = facility.toObject();
-            delete facilityObject.__v;
-            delete facilityObject.createdAt;
+      delete facilityObject.__v;
+      delete facilityObject.createdAt;
+
+      facilityObject.image = facilityObject.image
+        ? await getSignedReadUrl(facilityObject.image)
+        : null;
 
       responseData.status = Status.OK;
       responseData.error = null;
@@ -264,16 +260,19 @@ const facilityModule = {
 
       const updateData = {};
 
-      if (isPresent(data.name)) updateData.name = updateData.name = typeof data.name === 'string' ? data.name.trim().toUpperCase() : '';
-      if (isPresent(data.facilityType)) {
-      const typeToCheck = typeof data.facilityType === 'string' ? data.facilityType.trim().toUpperCase() : '';
-      if (!isValidFacilityType(typeToCheck)) {
-        responseData.status = Status.BAD_REQUEST;
-        responseData.error = 'Invalid facility type';
-        return responseData;
+      if (isPresent(data.name)) {
+        updateData.name = typeof data.name === 'string' ? data.name.trim().toUpperCase() : '';
       }
-      updateData.facilityType = typeToCheck;
-    }
+
+      if (isPresent(data.facilityType)) {
+        const typeToCheck = typeof data.facilityType === 'string' ? data.facilityType.trim().toUpperCase() : '';
+        if (!isValidFacilityType(typeToCheck)) {
+          responseData.status = Status.BAD_REQUEST;
+          responseData.error = 'Invalid facility type';
+          return responseData;
+        }
+        updateData.facilityType = typeToCheck;
+      }
 
       if (isPresent(data.capacity)) {
         if (!isValidCapacity(data.capacity)) {
@@ -330,18 +329,12 @@ const facilityModule = {
           return responseData;
         }
         try {
-          const filename = `${Date.now()}_${file.originalname.replace(/\s/g, "_")}`;
-          const blob = bucket.file(filename);
-          await new Promise((resolve, reject) => {
-            const stream = blob.createWriteStream({
-              resumable: false,
-              contentType: file.mimetype,
-            });
-            stream.on('error', reject);
-            stream.on('finish', resolve);
-            stream.end(file.buffer);
-          });
-          updateData.image = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+          if (facility.image) {
+            try { await bucket.file(facility.image).delete(); } catch { /* ignore */ }
+          }
+          const newKey = await uploadImageAndGetKey(file);
+          updateData.image = newKey;
+          responseData.newImageUrl = await getSignedReadUrl(newKey);
         } catch (err) {
           responseData.status = Status.INTERNAL_SERVER_ERROR;
           responseData.error = 'Image upload failed: ' + err.message;
@@ -383,13 +376,13 @@ const facilityModule = {
     return responseData;
   },
 
-/**
- * Deletes a facility by its ID.
- * @param {Object} dbHelper - The database helper for database operations.
- * @param {string} id - The ID of the facility to be deleted.
- * @param {Object} user - The user object containing the user ID and role.
- * @returns {Object} Response data with status, error, message, and facilityId on success.
- */
+  /**
+   * Deletes a facility by its ID.
+   * @param {Object} dbHelper - The database helper for database operations.
+   * @param {string} id - The ID of the facility to be deleted.
+   * @param {Object} user - The user object containing the user ID and role.
+   * @returns {Object} Response data with status, error, message, and facilityId on success.
+   */
   deleteFacility: async (dbHelper, id, user) => {
     const responseData = {
       status: Status.INTERNAL_SERVER_ERROR,
@@ -423,11 +416,7 @@ const facilityModule = {
       }
 
       if (facility.image) {
-        try {
-          const url = new URL(facility.image);
-          const filename = decodeURIComponent(url.pathname.replace(`/${bucket.name}/`, ''));
-          await bucket.file(filename).delete();
-        } catch (imgErr) {
+        try { await bucket.file(facility.image).delete(); } catch (imgErr) {
           console.warn('Failed to delete facility image:', imgErr.message);
         }
       }
@@ -479,14 +468,14 @@ const facilityModule = {
         { status: 0, __v: 0, createdAt: 0 }
       );
 
-      const facilitiesObject = facilities.map(facility => ({
+      const facilitiesObject = await Promise.all(facilities.map(async facility => ({
         id: facility._id.toString(),
         name: facility.name,
         capacity: facility.capacity,
         ratePerPerson: facility.ratePerPerson,
         price: facility.price,
-        image: facility.image
-      }));
+        image: facility.image ? await getSignedReadUrl(facility.image) : null
+      })));
 
       responseData.status = Status.OK;
       responseData.error = null;
@@ -568,6 +557,12 @@ const facilityModule = {
     return responseData;
   },
 
+  /**
+   * Searches facilities with optional filters, excluding those that have overlapping reservations.
+   * @param {Object} dbHelper - Database helper.
+   * @param {Object} options - {type, query, minPrice, maxPrice, capacity, checkInDate, checkOutDate}
+   * @returns {Object} Response data with status, error, and facilities on success.
+   */
   searchFacilities: async (dbHelper, options = {}) => {
     const {type, query, minPrice, maxPrice, capacity, checkInDate, checkOutDate} = options;
     const responseData = {
@@ -595,27 +590,35 @@ const facilityModule = {
       }
 
       if (checkInDate && checkOutDate) {
-      const overlappingReservations = await dbHelper.find('reservation', {
-        $or: [
-          {
-            dateOfArrival: { $lte: new Date(checkOutDate) },
-            dateOfDeparture: { $gte: new Date(checkInDate) }
-          }
-        ]
-      }, { facility: 1 });
+        const overlappingReservations = await dbHelper.find('reservation', {
+          $or: [
+            {
+              dateOfArrival: { $lte: new Date(checkOutDate) },
+              dateOfDeparture: { $gte: new Date(checkInDate) }
+            }
+          ]
+        }, { facility: 1 });
 
-      const excludeFacilityIds = overlappingReservations.map(r => r.facility?.toString()).filter(Boolean);
+        const excludeFacilityIds = overlappingReservations.map(r => r.facility?.toString()).filter(Boolean);
 
-      if (excludeFacilityIds.length > 0) {
-        filter._id = { $nin: excludeFacilityIds };
+        if (excludeFacilityIds.length > 0) {
+          filter._id = { $nin: excludeFacilityIds };
+        }
       }
-    }
 
       const facilities = await dbHelper.find('facility', filter, { __v: 0, createdAt: 0 });
 
+      const withSigned = await Promise.all(
+        facilities.map(async f => {
+          const obj = f.toObject ? f.toObject() : f;
+          obj.image = obj.image ? await getSignedReadUrl(obj.image) : null;
+          return obj;
+        })
+      );
+
       responseData.status = Status.OK;
       responseData.error = null;
-      responseData.facilities = facilities;
+      responseData.facilities = withSigned;
     } catch (error) {
       console.error('Error searching facilities:', error);
       responseData.error = error.message;
@@ -660,4 +663,29 @@ function isValidImage(file) {
     return 'Image size exceeds the 5MB limit';
   }
   return null;
+}
+
+async function uploadImageAndGetKey(file) {
+  const filename = `${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
+  const blob = bucket.file(filename);
+  await new Promise((resolve, reject) => {
+    const stream = blob.createWriteStream({
+      resumable: false,
+      contentType: file.mimetype
+    });
+    stream.on('error', reject);
+    stream.on('finish', resolve);
+    stream.end(file.buffer);
+  });
+  return filename; 
+}
+
+async function getSignedReadUrl(imageKey, expiresInMs = 60 * 60 * 1000) {
+  if (!imageKey) return null;
+  const [url] = await bucket.file(imageKey).getSignedUrl({
+    version: 'v4',
+    action: 'read',
+    expires: Date.now() + expiresInMs
+  });
+  return url;
 }
