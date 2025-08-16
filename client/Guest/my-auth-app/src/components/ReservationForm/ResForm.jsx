@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HeaderHome from '../HeaderHome/HeaderHome';
+import HeaderHome from '../HeaderHome/HeaderHome'; // Assuming HeaderHome component is available
 import styles from './ResForm.module.css';
-import { Mail, Phone, Home, Building, Users, User, ArrowLeft } from 'lucide-react'; 
+import { ArrowLeft } from 'lucide-react';
+
 function ReservationForm() {
   const navigate = useNavigate();
 
-  // State to hold form data, initialized with empty values
   const [formData, setFormData] = useState({
     groupAssociation: '',
     homeAddress: '',
@@ -64,10 +64,8 @@ function ReservationForm() {
   };
 
   const handleNext = () => {
-    console.log("Form Data:", formData);
-    // TODO: Implement logic to proceed to the next step,
-    // e.g., validation and navigation to the next form page.
-    alert("Proceeding to the next step of the form.");
+    // Navigate to the next page and pass the current form data
+    navigate('/reservation-step2', { state: { formData } });
   };
 
   return (
@@ -83,7 +81,6 @@ function ReservationForm() {
           </div>
           <div className={styles.formCard}>
             <form onSubmit={(e) => e.preventDefault()}>
-              {/* Form fields based on the image */}
               <div className={styles.formGroup}>
                 <label className={styles.label}>Name of Guest/Group/Association</label>
                 <input

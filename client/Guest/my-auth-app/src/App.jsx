@@ -19,6 +19,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import Transactions from './components/Transactions/Transactions';
 import ResHistory from './components/ResHistory/ResHistory';
 import ReservationForm from './components/ReservationForm/ResForm';
+import ReservationFormStep2 from './components/ReservationForm/ResForm2';
 import RequireAuth from './components/Utilities/RequireAuth';
 
 function AuthLayout() {
@@ -90,6 +91,7 @@ function App() {
       <Route path="/transactions" element={<Transactions />} />
       <Route path="/reservations" element={<ResHistory />} />
       <Route path="/reservation-form" element={<ReservationForm />} />
+      <Route path="/reservation-step2" element={<ReservationFormStep2 />} />
      {/* </Route> */}
     </Routes>
   );
