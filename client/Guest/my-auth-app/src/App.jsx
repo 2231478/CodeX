@@ -14,10 +14,10 @@ import FAQsPage from './components/FAQs/FAQs';
 import ContactsPage from './components/Contacts/Contacts';
 
 import backgroundImage from './assets/background-blur.png';
-import styles from './App.module.css';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Transactions from './components/Transactions/Transactions';
 import ResHistory from './components/ResHistory/ResHistory';
+import ReservationForm from './components/ReservationForm/ResForm';
 import RequireAuth from './components/Utilities/RequireAuth';
 
 function AuthLayout() {
@@ -88,6 +88,7 @@ function App() {
       <Route path="/contacts" element={<ContactsPage />} />
       <Route path="/transactions" element={<Transactions />} />
       <Route path="/reservations" element={<ResHistory />} />
+      <Route path="/reservation-form" element={<ReservationForm />} />
      {/* </Route> */}
     </Routes>
   );
