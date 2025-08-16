@@ -22,7 +22,7 @@ function LoginForm({ onForgotPassword, onLoginSuccess }) {
         const response = await fetch('/api/user/google-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: codeResponse.code }),
+          body: JSON.stringify({ code: codeResponse.code }),
         });
         const data = await response.json();
         if (response.ok) {
@@ -30,7 +30,7 @@ function LoginForm({ onForgotPassword, onLoginSuccess }) {
           localStorage.setItem('refreshToken', data.refreshToken); 
           localStorage.setItem('userId', data.userId);
           localStorage.setItem('userRole', data.role);
-          // redirect…
+          onLoginSuccess();
         } else {
           setError(data.error || 'Google login failed. Please try again.');
         }
@@ -61,7 +61,7 @@ function LoginForm({ onForgotPassword, onLoginSuccess }) {
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('userId', data.userId);
           localStorage.setItem('userRole', data.role);
-          // redirect…
+          onLoginSuccess();
         } else {
           setFacebookError(data.error || 'Facebook login failed. Please try again.');
         }

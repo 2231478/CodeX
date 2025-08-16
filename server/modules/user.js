@@ -211,10 +211,16 @@ const userModule = {
         };
 
         try {
-            const code = data?.token;
+            const code = data?.code || data?.token; 
             if (!code) {
             responseData.status = Status.BAD_REQUEST;
-            responseData.error = 'Missing Google token';
+            responseData.error = 'Missing Google authorization code';
+            return responseData;
+            }
+
+            if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+            responseData.status = Status.INTERNAL_SERVER_ERROR;
+            responseData.error = 'Server misconfigured: missing Google credentials';
             return responseData;
             }
 
@@ -224,18 +230,28 @@ const userModule = {
             'postmessage'
             );
 
-            const tokenResponse = await client.getToken({
-            code,
-            client_id: process.env.GOOGLE_CLIENT_ID,
-            client_secret: process.env.GOOGLE_CLIENT_SECRET,
-            redirect_uri: 'postmessage',
-            grant_type: 'authorization_code'
+            let tokens;
+            try {
+            const r = await client.getToken({
+                code,
+                redirect_uri: 'postmessage',
+                grant_type: 'authorization_code'
             });
+            tokens = r.tokens;
+            } catch (e) {
+            const detail = e?.response?.data || e?.message || e;
+            console.error('Google token exchange failed:', detail);
+            responseData.status = Status.BAD_GATEWAY;
+            responseData.error = 'google_exchange_failed';
+            responseData.detail = detail;
+            return responseData;
+            }
 
-            const idToken = tokenResponse.tokens.id_token;
+            const idToken = tokens?.id_token;
             if (!idToken) {
             responseData.status = Status.UNAUTHORIZED;
-            responseData.error = 'Invalid Google token';
+            responseData.error = 'No id_token from Google';
+            responseData.detail = tokens;
             return responseData;
             }
 
@@ -250,34 +266,32 @@ const userModule = {
             const email = (payload?.email || '').trim().toLowerCase();
 
             if (!googleId || payload?.email_verified !== true) {
-                responseData.status = Status.UNAUTHORIZED;
-                responseData.error = 'Google email not verified';
-                return responseData;
+            responseData.status = Status.UNAUTHORIZED;
+            responseData.error = 'Google email not verified';
+            return responseData;
             }
 
             let user = await dbHelper.findOne('user', { googleId });
             if (!user) {
-                if (email) {
-                    const emailOwner = await dbHelper.findOne('user', { email });
-                    if (emailOwner) {
-                    responseData.status = Status.BAD_REQUEST;
-                    responseData.error = 'Email already exists';
-                    return responseData;
-                    }
-                }   
+            if (email) {
+                const emailOwner = await dbHelper.findOne('user', { email });
+                if (emailOwner) {
+                responseData.status = Status.BAD_REQUEST;
+                responseData.error = 'Email already exists';
+                return responseData;
+                }
+            }
 
-                const baseDoc = {
-                    email: email || null,
-                    name,
-                    googleId,
-                    role: UserRole.GUEST,
-                    createdAt: Date.now(),
-                    lastLoggedIn: Date.now()
-                };
-
-                user = await dbHelper.create('user', baseDoc);
+            user = await dbHelper.create('user', {
+                email: email || null,
+                name,
+                googleId,
+                role: UserRole.GUEST,
+                createdAt: Date.now(),
+                lastLoggedIn: Date.now()
+            });
             } else {
-                await dbHelper.updateOne('user', { _id: user._id }, { lastLoggedIn: Date.now() });
+            await dbHelper.updateOne('user', { _id: user._id }, { lastLoggedIn: Date.now() });
             }
 
             const jti = uuidv4();
@@ -287,8 +301,7 @@ const userModule = {
             const accessToken = jwtHelper.generateAccessToken(safeUser);
             const refreshToken = jwtHelper.generateRefreshToken(safeUser);
 
-            const REFRESH_TTL = 7 * 24 * 60 * 60;
-            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: REFRESH_TTL });
+            await redisClient.set(`rt:${userId}:${jti}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
             responseData.status = Status.OK;
             responseData.error = null;
@@ -307,7 +320,6 @@ const userModule = {
             return responseData;
         }
     },
-
 
     /**
      * Logs in or registers a user via Facebook OAuth.

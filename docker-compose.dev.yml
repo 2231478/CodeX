@@ -11,6 +11,17 @@ services:
     environment:
       - NODE_ENV=development
 
+  admin-frontend: 
+      build:
+        context: ./client/Admin
+        dockerfile: Dockerfile.dev
+      ports:
+        - "5174:5174"
+      volumes:
+        - ./client/Admin:/app
+      environment:
+        - NODE_ENV=development
+
   backend:
     build:
       context: ./server
