@@ -14,6 +14,7 @@ import FAQsPage from './components/FAQs/FAQs';
 import ContactsPage from './components/Contacts/Contacts';
 
 import backgroundImage from './assets/background-blur.png';
+import styles from './App.module.css';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Transactions from './components/Transactions/Transactions';
 import ResHistory from './components/ResHistory/ResHistory';
